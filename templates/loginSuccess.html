@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+
+    <!-- TOOD: center -->
+    <style>
+        label {
+            text-align: left;
+        }
+
+
+        .button {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 4px;
+            display: block;
+        }
+    </style>
+
+    {% include "css_common.html" %}
+</head>
+<body>
+<div id="fcontainermodal" class="modal active">
+<div id="fcontainer" class="active menu">
+    <p class="menu-item">Welcome back {{ username }}</p>
+</div>
+</div>
+</body>
+</html>

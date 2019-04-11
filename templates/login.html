@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="google-site-verification" content="7hAbi00NXHOhpyI_ERYXVwkOCRISOKBLKhhSSM8Mg_Y" />
+    <title>Login</title>
+
+    <!-- TOOD: center -->
+    <style>
+        label {
+            text-align: left;
+        }
+
+
+        .button {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 4px;
+            display: block;
+        }
+
+        #login-error {
+            margin-bottom: 2px;
+        }
+    </style>
+
+    {% include "css_common.html" %}
+</head>
+<body>
+<div id="fcontainermodal" class="modal active">
+<div id="fcontainer" class="active menu">
+
+    {% if authError==1 %}
+        <span id="login-error" class="label label-warning">
+        Account not found, Wrong password?
+        </span>
+    {% endif %}
+
+    <form class="form-group" action="/auth" method="POST">
+        <!--<label class="form-label">Username</label>-->
+        <input type="text" id="Username" name="Username" class="form-input" placeholder="Username"/>
+        <!--<label class="form-label">Password</label>-->
+        <input type="password" id="Password" name="Password" class="form-input" placeholder="Password"/>
+        <input id="Submit" class="btn btn-primary button" type="submit" value="Login"/>
+    </form>
+
+    <form class="form-group" action="/register" style="margin-top: 0;">
+        <button id="Register" class="btn button" style="margin-top: 0;">Register</button>
+    </form>
+</div>
+</div>
+</body>
+</html>

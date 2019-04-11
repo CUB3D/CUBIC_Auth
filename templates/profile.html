@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile</title>
+
+    {% include "css_common.html" %}
+</head>
+<body>
+    {% include "settings_header.html" %}
+
+    <div class="column col-3 col-xs-12">
+    <div class="panel">
+            <div class="panel-body">
+                <div class="tile tile-title text-bold">Username</div>
+                <div class="tile tile-subtitle">{{ username }}</div>
+
+                <div class="tile tile-title text-bold">Password</div>
+                <div class="tile tile-subtitle">**********</div>
+            </div>
+    </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+
+    <!-- TOOD: center -->
+    <style>
+        .form-input {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+
+        #Submit {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
+        #login-error {
+            height: auto;
+            visibility: hidden;
+        }
+
+    </style>
+
+    {% include "css_common.html" %}
+    <script src="/resource/javascript/http_authedmine.com_lib_captcha.min.js" async></script>
+</head>
+<body>
+<noscript>
+    <p>Although login doesn't require Javascript, the creation of accounts does, this is mainly to prevent abuse
+    <p>All UKAuth Javscript is open source and Librejs compatible
+    <p>All UKAuth resources are self hosted
+</noscript>
+
+<div id="fcontainermodal" class="modal active">
+<div id="fcontainer" class="active menu">
+
+    {% if passwordsDiffer %}
+        <span id="password-error" class="label label-warning">
+        Passwords didn't match
+        </span>
+    {% endif %}
+
+    {% if usernameTaken %}
+        <span id="username-error" class="label label-warning">
+        Username taken!
+        </span>
+    {% endif %}
+
+    <form class="form-group" action="/newAccount" method="POST">
+        <input type="text" id="Username" name="Username" class="form-input" placeholder="Username" autofocus/>
+
+        <span id="login-error" class="label label-warning">
+            Username taken!
+        </span>
+
+        <input name="Password1" class="form-input" type="password" placeholder="Password"/>
+        <input name="Password2" class="form-input" type="password" placeholder="Confirm password"/>
+
+        <div class="coinhive-captcha" data-hashes="32" data-key="BAl0heG4stDjFdKA5SyYtzOUWnWxJIUb">
+            <em>Loading Captcha...<br>
+                If it doesn't load, please disable Adblock!</em>
+        </div>
+
+        <input id="Submit" class="btn btn-primary" type="submit" value="Register"/>
+    </form>
+</div>
+</div>
+
+
+<script>
+    document.getElementById("Username").oninput = function (ev) {
+        if(document.getElementById("Username").value.length <= 0)
+            return;
+
+        console.log("{{ api_url }}/" + document.getElementById("Username").value);
+
+        fetch("{{ api_url }}/" + document.getElementById("Username").value).then(function (value) {
+            return value.json();
+        }).then(function (value) {
+            if(value["Exists"]) {
+                document.getElementById("login-error").style.visibility = "visible";
+            } else {
+                document.getElementById("login-error").style.visibility = "hidden";
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

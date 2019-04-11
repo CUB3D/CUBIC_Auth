@@ -1,0 +1,15 @@
+ulid
+bcrypt
+redis
+flask
+opencv-python
+future-fstrings
+flask_uwsgi_websocket
+flask_redis
+gevent
+
+opencv-python
+matplotlib
+pillow
+pytesseract
+pytesseract
