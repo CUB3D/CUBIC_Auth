@@ -1,0 +1,10 @@
+version: '3'
+services:
+  auth:
+    build: .
+    ports:
+      - "${PORT}:8085"
+    volumes:
+      - .:/home/code
+    environment:
+      - ENV=${ENV}

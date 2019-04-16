@@ -10,6 +10,7 @@ import functools
 import time
 import bcrypt
 import os
+import secrets
 import sqlite3
 import base64
 import json
@@ -34,12 +35,22 @@ websocket = GeventWebSocket(app)
 app.config["REDIS_URL"] = "redis://:@localhost:6379/0"
 
 crashtrak = __import__("src.modules.crashtrak", fromlist=["mod_auth"])
+ncl = __import__("src.modules.ncl", fromlist=["mod_auth"])
 
 app.register_blueprint(crashtrak.mod_auth)
+app.register_blueprint(ncl.mod_auth)
 
 def genUniqueToken():
-    return base64.b64encode(os.urandom(64)).decode("utf-8")
+    alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+    return "".join([secrets.choice(alphabet) for _ in range(32)])
+
+@app.route("/app/ncl/static_config")
+def app_ncl_static_config():
+    return json.dumps({
+        "version": 214,
+        "url_arm": "https://cloud.cub3d.pw/index.php/s/XBENdiMkTAFAQN9/download"
+        })
 
 @app.route("/app/demo_camera/main")
 def app_demo_camera():
@@ -204,6 +215,11 @@ def script(type, file):
         return resp
 
 
+@app.route("/generate_204")
+def gen204():
+    return "", 204
+
+
 def isLoginValid():
     if "UK_AUTH_TOKEN" in request.cookies:
         token = request.cookies.get("UK_AUTH_TOKEN")
@@ -252,6 +268,18 @@ def requireLogin(view):
     return wrapper
 
 
+@app.route("/app/<id>/authenticate")
+def appLogin(id):
+    # Check that the application token is valid
+
+    #if it is, check if the current user has accepted it before, if not show a accept page
+    #if they have then direct back with a token
+
+    #if not redirect back without login also if no on accept page
+
+
+    return render_template("")
+
 @app.route("/settings/profile")
 @requireLogin
 def settings():
@@ -276,7 +304,7 @@ def developer():
     return render_template("developer.html")
 
 
-@app.route("/settings/developer/newApplication")
+@app.route("/settings/developer/newApplication", methods=["GET", "POST"])
 @requireLogin
 def newApplication():
     applicationName = request.form["appName"]
@@ -287,10 +315,10 @@ def newApplication():
     with sqlite3.connect("Test.db") as con:
         cur = con.cursor()
         cur.execute("""INSERT INTO Application (ApplicationToken, CreationTime, OwnerID, Description, ApplicationName) VALUES (?, ?, ?, ?, ?)""",
-                    (token, time.clock(), userInfo["UserID"], applicationDesc, applicationName))
+                    (token, int(time.time()), userInfo["UserID"], applicationDesc, applicationName))
         con.commit()
 
-    return redirect("/settings/applications")
+    return render_template("application_create.html", appID=token)
 
 
 @app.route("/auth", methods=["POST", "GET"])
@@ -475,7 +503,7 @@ def pingDevicesThread():
 
 def start():
     multiprocessing.Process(target=pingDevicesThread).start()
-    app.run(host="0.0.0.0", port=8085, gevent=100)
+    app.run(host="0.0.0.0", port=8085, gevent=100, debug=True)
 
 if __name__ == '__main__':
     start()

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome back</title>
+    <style>
+      div,p {
+        text-align: center;
+      }
+    </style>
+
+    {% include "css_common.html" %}
+</head>
+<body>
+  <div id="fcontainermodal" class="modal active">
+    <div id="fcontainer" class="active menu">
+      <p class="menu-item">Application created</p>
+      <label class="menu-item">App ID</label>
+      <pre>{{appID}}</pre>
+      <button class="menu-item btn btn-primary" onclick="window.location.href='/settings/profile'">Return</button>
+    </div>
+  </div>
+</body>
+</html>

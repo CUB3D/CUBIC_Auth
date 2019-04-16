@@ -20,14 +20,13 @@
         }
 
         #login-error {
-            height: auto;
             visibility: hidden;
+            position: absolute;
         }
 
     </style>
 
     {% include "css_common.html" %}
-    <script src="/resource/javascript/http_authedmine.com_lib_captcha.min.js" async></script>
 </head>
 <body>
 <noscript>
@@ -61,11 +60,6 @@
         <input name="Password1" class="form-input" type="password" placeholder="Password"/>
         <input name="Password2" class="form-input" type="password" placeholder="Confirm password"/>
 
-        <div class="coinhive-captcha" data-hashes="32" data-key="BAl0heG4stDjFdKA5SyYtzOUWnWxJIUb">
-            <em>Loading Captcha...<br>
-                If it doesn't load, please disable Adblock!</em>
-        </div>
-
         <input id="Submit" class="btn btn-primary" type="submit" value="Register"/>
     </form>
 </div>
@@ -82,10 +76,12 @@
         fetch("{{ api_url }}/" + document.getElementById("Username").value).then(function (value) {
             return value.json();
         }).then(function (value) {
+            let e = document.getElementById("login-error");
+            e.style.position = "unset";
             if(value["Exists"]) {
-                document.getElementById("login-error").style.visibility = "visible";
+                e.style.visibility = "visible";
             } else {
-                document.getElementById("login-error").style.visibility = "hidden";
+                e.style.visibility = "hidden";
             }
         });
     }

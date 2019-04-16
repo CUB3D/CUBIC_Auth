@@ -1,0 +1,20 @@
+<html>
+<head>
+  <script src="/resource/ukauth.js"></script>
+</head>
+<body>
+<button id="login">Login</button>
+<script>
+  document.getElementById("login").onclick = function() {
+      let appDescription = {
+        APP_ID: "ws3VqdPXSoLUfCNTLaYG1AheKN7hV2VG",
+        callback: function(user) {
+            console.log("User logged in: " + user.username)
+        }
+      };
+
+      ukauth.oneClickLogin(appDescription);
+  }
+</script>
+</body>
+</html>
