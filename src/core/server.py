@@ -129,79 +129,6 @@ def verifyLogin():
             con.commit()
 
 
-def setupDB():
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
-
-    # Users and sessions
-    cur.execute("""CREATE TABLE User (
-        UserID INTEGER PRIMARY KEY NOT NULL UNIQUE,
-        Username VARCHAR NOT NULL UNIQUE,
-        PasswordHash VARCHAR NOT NULL
-        );""")
-    con.commit()
-
-    cur.execute("""CREATE TABLE Session (
-        SessionID INTEGER PRIMARY KEY NOT NULL UNIQUE,
-        SessionToken VARCHAR NOT NULL UNIQUE,
-        UserID INT NOT NULL,
-        FOREIGN KEY(UserID) REFERENCES User(UserID)
-        );""")
-    con.commit()
-
-    cur.execute("""CREATE TABLE SessionAccess (
-        UsageID INTEGER PRIMARY KEY NOT NULL UNIQUE,
-        SessionID INTEGER NOT NULL UNIQUE,
-        AccessTime INTEGER NOT NULL,
-        Success INTEGER NOT NULL,
-        FOREIGN KEY(SessionID) REFERENCES Session(SessionID) 
-        );""")
-    con.commit()
-
-    cur.execute("""CREATE TABLE LoginAttempt (
-        AttemptID INTEGER PRIMARY KEY NOT NULL UNIQUE,
-        Username VARCHAR NOT NULL,
-        AccessTime INTEGER NOT NULL,
-        Success INTEGER NOT NULL
-        );""")
-    con.commit()
-
-
-    # Applications
-    cur.execute("""CREATE TABLE Application (
-        ApplicationID INTEGER PRIMARY KEY NOT NULL UNIQUE,
-        ApplicationToken VARCHAR NOT NULL,
-        CreationTime INTEGER NOT NULL,
-        OwnerID INTEGER NOT NULL,
-        Description VARCHAR NOT NULL,
-        ApplicationName VARCHAR NOT NULL,
-        FOREIGN KEY(OwnerID) REFERENCES User(UserID)
-        );""")
-    con.commit()
-
-    cur.execute("""CREATE TABLE UserApplication (
-        UserApplicationID INTEGER PRIMARY KEY NOT NULL UNIQUE,
-        UserID INTEGER NOT NULL,
-        ApplicationID INTEGER NOT NULL,
-        FOREIGN KEY(UserID) REFERENCES User(UserID),
-        FOREIGN KEY(ApplicationID) REFERENCES Application(UserApplicationID)
-        );""")
-    con.commit()
-
-    cur.execute("""CREATE TABLE Device (
-        DeviceID INTEGER PRIMARY KEY NOT NULL UNIQUE,
-        DeviceToken VARCHAR NOT NULL,
-        DeviceType VARCHAR NOT NULL,
-        OwnerID INTEGER NOT NULL,
-        BatteryPercent INTEGER DEFAULT 0,
-        Latitude REAL DEFAULT 0,
-        Longitude REAL DEFAULT 0,
-        FOREIGN KEY(OwnerID) REFERENCES User(UserID)
-        );""")
-    con.commit()
-
-
-
 @app.route("/")
 def default():
     return redirect("/login")
@@ -268,17 +195,26 @@ def requireLogin(view):
     return wrapper
 
 
-@app.route("/app/<id>/authenticate")
+@app.route("/app/<id>/auth")
 def appLogin(id):
-    # Check that the application token is valid
+    with sqlite3.connect("Test.db") as con:
+        cur = con.cursor()
+        cur.execute("""SELECT url FROM Application WHERE ApplicationID=? """, (id,))
+
+    rows = cur.fetchall()
+
+    # If the id is invalid then redirect to login page
+    if len(rows) <= 0:
+        return redirect(url_for(endpoint="/login"))
+
+    url = rows[0][0]
 
     #if it is, check if the current user has accepted it before, if not show a accept page
     #if they have then direct back with a token
 
     #if not redirect back without login also if no on accept page
 
-
-    return render_template("")
+    return redirect(url)
 
 @app.route("/settings/profile")
 @requireLogin
@@ -485,10 +421,6 @@ def newAccount():
     return redirect("/login")
 
 
-if not os.path.exists("Test.db"):
-    setupDB()
-
-
 def pingDevicesThread():
     """
     Every 10 minutes, ping every known device to see if they are active
@@ -504,6 +436,7 @@ def pingDevicesThread():
 def start():
     multiprocessing.Process(target=pingDevicesThread).start()
     app.run(host="0.0.0.0", port=8085, gevent=100, debug=True)
+
 
 if __name__ == '__main__':
     start()

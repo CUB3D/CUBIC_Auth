@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title>Register</title>
 
-    <!-- TOOD: center -->
     <style>
         .form-input {
             margin-top: 8px;
@@ -77,10 +76,11 @@
             return value.json();
         }).then(function (value) {
             let e = document.getElementById("login-error");
-            e.style.position = "unset";
             if(value["Exists"]) {
+                e.style.position = "unset";
                 e.style.visibility = "visible";
             } else {
+                e.style.position = "absolute";
                 e.style.visibility = "hidden";
             }
         });
