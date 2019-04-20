@@ -1,8 +1,10 @@
 ulid
 bcrypt
 redis
-flask
-opencv-python
+Flask
+Flask-Alembic
+Flask-Redis
+Flask-SQLAlchemy
 future-fstrings
 flask_uwsgi_websocket
 flask_redis
@@ -14,4 +16,6 @@ opencv-python
 matplotlib
 pillow
 pytesseract
-pytesseract
+
+
+

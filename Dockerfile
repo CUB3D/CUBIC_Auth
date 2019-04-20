@@ -7,9 +7,13 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y redis-server gcc 
 COPY ./requirements.txt ./
 RUN pip install -r requirements.txt
 
-COPY ./resource/ ./resource/
-COPY ./src/ ./src/
-COPY ./templates/ ./templates/
-COPY ./server.py ./server.py
+COPY ./alembic.ini ./
+COPY ./migrations/ ./migrations/
 
-CMD python server.py
+RUN cd /home/code && alembic upgrade head
+
+#COPY ./resource/ ./resource/
+#COPY ./src/ ./src/
+#COPY ./templates/ ./templates/
+
+CMD python -m src

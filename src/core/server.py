@@ -1,10 +1,5 @@
 # -*- coding: future_fstrings -*-
-from flask import Flask
-from flask import request
-from flask import render_template
-from flask import redirect
-from flask import make_response
-from flask import url_for
+from flask import Flask, request, render_template, redirect, make_response, url_for
 from flask_uwsgi_websocket import GeventWebSocket
 import functools
 import time
@@ -13,26 +8,26 @@ import os
 import secrets
 import sqlite3
 import base64
-import json
 from flask_redis import FlaskRedis
 import redis
 import multiprocessing
-import ulid
-# TODO: get rid of ulid, change to custom id
-# from ..modules.idcarddetect import detect_flask
-from urllib.request import urlretrieve
 import json
-import time
-import sys
-from ..modules.idcarddetect import detect_flask
-from ..modules.ncl import add_feature_suggest
-
-
-#from ..modules import crashtrak
+from src.modules.idcarddetect import detect_flask
+import src.database
+from src.database import db
+from src.models.User import User
+from src.models.Session import Session
+from src.models.Device import Device
+from src.models.SessionAccess import SessionAccess
+from src.models.LocationHistory import LocationHistory
+from src.models.Application import Application
 
 app = Flask(__name__, template_folder="/home/code/templates/")
 websocket = GeventWebSocket(app)
 app.config["REDIS_URL"] = "redis://:@localhost:6379/0"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../../Test.db"
+
+src.database.init(app)
 
 crashtrak = __import__("src.modules.crashtrak", fromlist=["mod_auth"])
 ncl = __import__("src.modules.ncl", fromlist=["mod_auth"])
@@ -40,10 +35,12 @@ ncl = __import__("src.modules.ncl", fromlist=["mod_auth"])
 app.register_blueprint(crashtrak.mod_auth)
 app.register_blueprint(ncl.mod_auth)
 
-def genUniqueToken():
+
+def gen_unique_token(length=32):
     alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-    return "".join([secrets.choice(alphabet) for _ in range(32)])
+    return "".join([secrets.choice(alphabet) for _ in range(length)])
+
 
 @app.route("/app/ncl/static_config")
 def app_ncl_static_config():
@@ -51,6 +48,7 @@ def app_ncl_static_config():
         "version": 214,
         "url_arm": "https://cloud.cub3d.pw/index.php/s/XBENdiMkTAFAQN9/download"
         })
+
 
 @app.route("/app/demo_camera/main")
 def app_demo_camera():
@@ -72,8 +70,6 @@ def app_demo_camera_submit():
     imgData = base64.urlsafe_b64decode(img)
 
     return json.dumps(detect_flask.doFind(imgData))
-
-
 
 
 @websocket.route("/cbns/<deviceToken>")
@@ -115,20 +111,6 @@ def test(ws, deviceToken):
     print("Killing ws for", deviceToken)
 
 
-def verifyLogin():
-    if "UK_AUTH_TOKEN" in request.cookies:
-        token = request.cookies.get("UK_AUTH_TOKEN")
-
-        with sqlite3.connect("Test.db") as con:
-            cur = con.cursor()
-            # Validate the auth token
-            cur.execute("""SELECT SessionID FROM Session WHERE SessionToken=?""", (token,))
-
-            cur.execute("""Insert INTO SessionAccess (SessionID, AccessTime, Success) VALUES (?, ?, ?)""",
-                        (cur.fetchall()[0][0], int(time.time()), 1))
-            con.commit()
-
-
 @app.route("/")
 def default():
     return redirect("/login")
@@ -142,39 +124,35 @@ def script(type, file):
         return resp
 
 
-@app.route("/generate_204")
-def gen204():
-    return "", 204
-
-
-def isLoginValid():
+def is_login_valid():
     if "UK_AUTH_TOKEN" in request.cookies:
         token = request.cookies.get("UK_AUTH_TOKEN")
 
-        with sqlite3.connect("Test.db") as con:
-            cur = con.cursor()
-            cur.execute("""SELECT UserID FROM Session WHERE SessionToken=?""", (token,))
+        user_session = Session.query.filter(Session.SessionToken == token).first()
 
-            rows = cur.fetchall()
-
-            if len(rows) > 0:
-                return True
-            else:
-                print("Invalid login token found", token)
+        if user_session is not None:
+            # Log an attempt to use a session
+            SessionAccess(user_session.SessionID, 1).create()
+            return True
+        else:
+            print("Invalid login token found", token)
     else:
-        print("No login token found where required")
+        print("No login token found for field with required auth")
 
-        return False
+    return False
+
 
 def getCurrentUserDetails():
     #TODO: maybe second token check
     token = request.cookies.get("UK_AUTH_TOKEN")
 
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
-        cur.execute("""SELECT Username, User.UserID FROM User INNER JOIN Session ON Session.UserID = User.UserID WHERE SessionToken=?""", (token,))
+    session = Session.query.filter(Session.SessionToken == token).first()
 
-        username,userID = cur.fetchall()[0]
+    user = User.query.filter(User.UserID == session.UserID).first()
+
+    if user is not None:
+        username = user.Username
+        userID = user.UserID
 
         return {
             "Username": username,
@@ -186,35 +164,33 @@ def getCurrentUserDetails():
 def requireLogin(view):
     @functools.wraps(view)
     def wrapper(**args):
-        if isLoginValid():
+        if is_login_valid():
             return view(**args)
         else:
             print("Page access attempted with invalid login")
-            return redirect(url_for("/login"))
+            resp = make_response(redirect(url_for("login")))
+            resp.set_cookie("UK_AUTH_TOKEN", "")
+            return resp
 
     return wrapper
 
 
-@app.route("/app/<id>/auth")
-def appLogin(id):
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
-        cur.execute("""SELECT url FROM Application WHERE ApplicationID=? """, (id,))
+@app.route("/app/<token>/auth")
+def appLogin(token):
 
-    rows = cur.fetchall()
+    application = Application.query.filter(Application.ApplicationToken == token).first()
 
     # If the id is invalid then redirect to login page
-    if len(rows) <= 0:
-        return redirect(url_for(endpoint="/login"))
+    if application is None:
+        return redirect(url_for("login"))
 
-    url = rows[0][0]
+    return application.url
 
-    #if it is, check if the current user has accepted it before, if not show a accept page
+    #if it is not, check if the current user has accepted it before, if not show a accept page
     #if they have then direct back with a token
 
     #if not redirect back without login also if no on accept page
 
-    return redirect(url)
 
 @app.route("/settings/profile")
 @requireLogin
@@ -245,14 +221,11 @@ def developer():
 def newApplication():
     applicationName = request.form["appName"]
     applicationDesc = request.form["appDesc"]
-    token = genUniqueToken()
+    token = gen_unique_token()
     userInfo = getCurrentUserDetails()
+    url = "cub3d.pw"
 
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
-        cur.execute("""INSERT INTO Application (ApplicationToken, CreationTime, OwnerID, Description, ApplicationName) VALUES (?, ?, ?, ?, ?)""",
-                    (token, int(time.time()), userInfo["UserID"], applicationDesc, applicationName))
-        con.commit()
+    Application(token, userInfo["UserID"], applicationDesc, applicationName, url).create()
 
     return render_template("application_create.html", appID=token)
 
@@ -262,18 +235,18 @@ def auth():
     u = request.form["Username"]
     p = request.form["Password"]
 
-    # Get password hash
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
-        cur.execute("""SELECT PasswordHash,UserID,Username FROM User WHERE Username=? """, (u,))
+    user = User.query.filter(User.Username == u).first()
 
-    rows = cur.fetchall()
-    if len(rows) <= 0:
+    if user is None:
         resp = redirect("/login")
         resp.set_cookie("UK_LOGIN_FAIL", "1")
         return resp
 
-    passwordHash, userID, username = rows[0]
+    # passwordHash, userID, username = rows[0]
+
+    passwordHash = user.PasswordHash
+    userID = user.UserID
+    username = user.Username
 
     resp = redirect("/login")
 
@@ -281,10 +254,7 @@ def auth():
         # If the login was correct then create and store a session token
         token = base64.b64encode(os.urandom(64)).decode("utf-8")
 
-        with sqlite3.connect("Test.db") as con:
-            cur = con.cursor()
-            cur.execute("""INSERT INTO Session (SessionToken, UserID) VALUES (?,?)""", (token, userID))
-            con.commit()
+        Session(token, userID).create()
 
         resp = redirect("/loginSuccess")
         resp.set_cookie("UK_AUTH_TOKEN", token)
@@ -299,14 +269,10 @@ def login():
     if "UK_AUTH_TOKEN" in request.cookies:
         token = request.cookies.get("UK_AUTH_TOKEN")
 
-        with sqlite3.connect("Test.db") as con:
-            cur = con.cursor()
-            cur.execute("""SELECT UserID FROM Session WHERE SessionToken=?""", (token,))
+        user = Session.query.filter(Session.SessionToken == token).first()
 
-            rows = cur.fetchall()
-
-            if len(rows) > 0:
-                return redirect("/loginSuccess")
+        if user is not None:
+            return redirect("/loginSuccess")
 
     # Show error message if login failed before (failed auth cookies present)
     error = ("UK_LOGIN_FAIL" in request.cookies and request.cookies.get("UK_LOGIN_FAIL") == "1")
@@ -316,6 +282,17 @@ def login():
     resp.set_cookie("UK_LOGIN_FAIL", "0")
 
     return resp
+
+
+@app.route("/logout")
+@requireLogin
+def logout():
+    token = request.cookies.get("UK_AUTH_TOKEN")
+
+    c = Session.query.filter(Session.SessionToken == token).first()
+    db.session.delete(c)
+    db.session.commit()
+    return redirect("/login")
 
 
 @app.route("/loginSuccess")
@@ -339,30 +316,23 @@ def register():
 
 
 @app.route("/api/accountExists/<username>")
-def api_accoutExists(username):
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
-        cur.execute("""SELECT Username FROM User WHERE Username=?""", (username,))
-        if len(cur.fetchall()) > 0:
-            return json.dumps({"Exists": 1})
-        else:
-            return json.dumps({"Exists": 0})
+def api_account_exists(username):
+    user = User.query.filter(User.Username == username).first()
+    if user is None:
+        return json.dumps({"Exists": 0})
+    else:
+        return json.dumps({"Exists": 1})
 
 
 @app.route("/newDevice/<name>")
 @requireLogin
 def newDevice(name):
-    print("Adding device")
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
+    token = gen_unique_token()
+    ownerID = getCurrentUserDetails()["UserID"]
 
-        token = str(ulid.new()) + str(ulid.new())
-        ownerID = getCurrentUserDetails()["UserID"]
+    print("Adding device", token, name)
 
-        print("Adding device", token, name)
-
-        cur.execute("""INSERT INTO Device (DeviceToken, DeviceType, OwnerID) VALUES (?, ?, ?)""", (token, name, ownerID))
-        con.commit()
+    Device(token, name, ownerID).create()
 
     resp = make_response()
     resp.set_cookie("UK_DEVICE_TOKEN", token)
@@ -378,11 +348,18 @@ def ping(token):
 
 @app.route("/api/updateDevice/<token>/<bat>/<lat>/<long>")
 def updateDevice(token, bat, lat, long):
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
+    # Get the device
+    device = Device.query.filter(Device.DeviceToken == token).first()
 
-        cur.execute("UPDATE Device SET BatteryPercent=?, Latitude=?, Longitude=? WHERE DeviceToken=?", (bat, lat, long, token))
-        con.commit()
+    if device is not None:
+        # Store the old location for history
+        LocationHistory(device.DeviceID, device.Latitude, device.Longitude).create()
+
+        device.BatteryPercent = bat
+        device.Latitude = lat
+        device.Longitude = long
+        db.session.commit()
+
     return ""
 
 
@@ -404,19 +381,14 @@ def newAccount():
     del password1
     del password2
 
-    with sqlite3.connect("Test.db") as con:
-        cur = con.cursor()
+    user = User.query.filter(User.Username == username).first()
 
-        cur.execute("""SELECT Username FROM User WHERE Username=?""", (username,))
-
-        if len(cur.fetchall()) > 0:
+    if user is not None:
             resp = redirect("/register")
             resp.set_cookie("UK_USERNAME_TAKEN", "1")
             return resp
-
-        cur.execute("""INSERT INTO User (Username, PasswordHash) VALUES (?, ?)""",
-                    (username, hash))
-        con.commit()
+    else:
+        User(username, hash).create()
 
     return redirect("/login")
 
