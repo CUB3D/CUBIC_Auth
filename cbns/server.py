@@ -1,8 +1,11 @@
-from starlette.routing import Mount, Route, Router
-from starlette.websockets import WebSocket
 from starlette.applications import Starlette
+import redis
+from starlette.websockets import WebSocket
 
 app = Starlette()
+
+redis_server = redis.Redis(host='redis', port=6379, password='')
+
 
 @app.websocket_route('/')
 async def ws_(ws):
@@ -10,19 +13,9 @@ async def ws_(ws):
     await ws.send_text('Hi')
     await ws.close()
 
-#class CBNSApp:
-#    def __init__(self, scope):
-#        assert scope['type'] == 'websocket'
-#        self.scope = scope
 
-#    async def __call__(self, receive, send):
-#        ws = WebSocket(self.scope, receive=receive, send=send)
-#        await ws.accept()
-#        t = await ws.receive_text()
-#        await ws.send_text(t)
-
-#app = Router([
-#    Route('/', endpoint=CBNSApp, methods=['GET'])
-#])
-
-
+@app.websocket_route('/poll/{id}')
+async def poll_for_notifications(ws):
+    id = ws.path_params['id']
+    await ws.accept()
+    redis_server.sadd('connected_devices', str(id))
