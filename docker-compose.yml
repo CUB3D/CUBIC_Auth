@@ -17,5 +17,8 @@ services:
     build: ./cbns
     ports:
       - "8088:8080"
+  cbns_update:
+    build: ./cbns_globalUpdate
+
 volumes:
   auth_files:

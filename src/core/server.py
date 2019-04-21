@@ -72,45 +72,6 @@ def app_demo_camera():
 #     return json.dumps(detect_flask.doFind(imgData))
 
 
-@websocket.route("/cbns/<deviceToken>")
-def test(ws, deviceToken):
-    print("Recieved websocket connect")
-    print("starting pubsub, channel_device_{}".format(deviceToken))
-    redis_store = FlaskRedis(app)
-    r = redis_store.pubsub()
-    r.subscribe("channel_device_{}".format(deviceToken), "channel_device_common")
-
-    running = True
-    while True:
-        for msg in r.listen():
-
-            data = msg["data"]
-
-            if type(data) is bytes:
-                data = data.decode("utf-8")
-            else:
-                data = str(data)
-
-            print("Dispatching message:", data)
-            ws.send(data)
-
-            print("Checking for messages")
-            while True:
-                dat = ws.receive()
-                if dat is None:
-                    running = False
-                    print("Got EOS")
-                    break
-                if dat == b'':
-                    break
-                print("DAT:", dat)
-            print("MSG check done")
-
-        if not running:
-            break
-    print("Killing ws for", deviceToken)
-
-
 @app.route("/")
 def default():
     return redirect("/login")
@@ -393,20 +354,20 @@ def newAccount():
     return redirect("/login")
 
 
-def pingDevicesThread():
-    """
-    Every 10 minutes, ping every known device to see if they are active
-    :return:
-    """
-    r = redis.Redis(host="localhost")
-    while True:
-        r.publish("channel_device_common", "device_update_status")
-        print("Global update done")
-        time.sleep(15 * 60)
+# def pingDevicesThread():
+#     """
+#     Every 10 minutes, ping every known device to see if they are active
+#     :return:
+#     """
+#     r = redis.Redis(host="localhost")
+#     while True:
+#         r.publish("channel_device_common", "device_update_status")
+#         print("Global update done")
+#         time.sleep(15 * 60)
 
 
 def start():
-    multiprocessing.Process(target=pingDevicesThread).start()
+    # multiprocessing.Process(target=pingDevicesThread).start()
     app.run(host="0.0.0.0", port=8080, gevent=100, debug=True)
 
 

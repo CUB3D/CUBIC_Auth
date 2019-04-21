@@ -29,12 +29,12 @@ async def poll_for_notifications(ws):
         while True:
             msg = ps.get_message()
 
-            if msg and msg['type'] != 'subscribe':
-                print("D: ", msg['type'])
+            if msg:
                 print(f"Got message: {msg}")
-                data = msg['data'].decode("utf-8")
+                if msg['type'] != 'subscribe':
+                    data = msg['data'].decode("utf-8")
 
-                await ws.send_text(data)
+                    await ws.send_text(data)
     except WebSocketDisconnect as e:
         print(e)
     finally:
