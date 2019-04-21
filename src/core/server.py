@@ -12,7 +12,7 @@ from flask_redis import FlaskRedis
 import redis
 import multiprocessing
 import json
-from src.modules.idcarddetect import detect_flask
+#from src.modules.idcarddetect import detect_flask
 import src.database
 from src.database import db
 from src.models.User import User
@@ -55,21 +55,21 @@ def app_demo_camera():
     return render_template("demo_camera.html")
 
 
-@app.route("/app/demo_camera/submit", methods=["POST", "GET"])
-def app_demo_camera_submit():
-    img = request.form["img"]
-
-    while len(img) % 4 != 0:
-        img += "="
-
-    img = img.split(",")[-1]
-
-    with open("test-dump.txt", "w") as f:
-        f.write(img)
-
-    imgData = base64.urlsafe_b64decode(img)
-
-    return json.dumps(detect_flask.doFind(imgData))
+# @app.route("/app/demo_camera/submit", methods=["POST", "GET"])
+# def app_demo_camera_submit():
+#     img = request.form["img"]
+#
+#     while len(img) % 4 != 0:
+#         img += "="
+#
+#     img = img.split(",")[-1]
+#
+#     with open("test-dump.txt", "w") as f:
+#         f.write(img)
+#
+#     imgData = base64.urlsafe_b64decode(img)
+#
+#     return json.dumps(detect_flask.doFind(imgData))
 
 
 @websocket.route("/cbns/<deviceToken>")
