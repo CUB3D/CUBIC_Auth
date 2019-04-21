@@ -2,7 +2,8 @@ FROM python:3.7-slim
 
 WORKDIR /home/code
 
-#RUN apt-get update && apt-get upgrade -y && apt-get install -y gcc libglib2.0-0 libsm-dev libopencv-*
+RUN apt-get update && apt-get upgrade -y && apt-get install -y gcc
+#RUN apt-get install -y libglib2.0-0 libsm-dev libopencv-*
 
 COPY ./requirements.txt ./
 RUN pip install -r requirements.txt
