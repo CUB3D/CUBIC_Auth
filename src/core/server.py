@@ -407,7 +407,7 @@ def pingDevicesThread():
 
 def start():
     multiprocessing.Process(target=pingDevicesThread).start()
-    app.run(host="0.0.0.0", port=8085, gevent=100, debug=True)
+    app.run(host="0.0.0.0", port=8080, gevent=100, debug=True)
 
 
 if __name__ == '__main__':

@@ -3,9 +3,10 @@ services:
   auth:
     build: .
     ports:
-      - "${PORT}:8085"
+      - "${PORT}:8080"
     volumes:
       - .:/home/code
+      - auth_files:/home/code/files
     environment:
       - ENV=${ENV}
   redis:
@@ -15,4 +16,6 @@ services:
   cbns:
     build: ./cbns
     ports:
-      - "8087:8087"
+      - "8088:8080"
+volumes:
+  auth_files:

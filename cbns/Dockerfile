@@ -7,4 +7,4 @@ RUN pip install -r requirements.txt
 
 COPY server.py ./
 
-CMD hypercorn --error-log - --access-log - -b 0.0.0.0:8087 server:app
+CMD hypercorn -w 4 --error-log - --access-log - -b 0.0.0.0:8080 --debug server:app
