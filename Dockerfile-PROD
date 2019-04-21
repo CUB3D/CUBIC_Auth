@@ -2,7 +2,7 @@ FROM python:3.7-slim
 
 WORKDIR /home/code
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y gcc libglib2.0-0 libsm-dev libopencv-*
+RUN apt-get update && apt-get upgrade -y && apt-get install -y gcc libglib2.0-0 libsm-dev libopencv-* python3-gunicorn
 
 COPY ./requirements.txt ./
 RUN pip install -r requirements.txt
@@ -12,8 +12,8 @@ COPY ./migrations/ ./migrations/
 
 RUN cd /home/code && alembic upgrade head
 
-#COPY ./resource/ ./resource/
-#COPY ./src/ ./src/
-#COPY ./templates/ ./templates/
+COPY ./resource/ ./resource/
+COPY ./src/ ./src/
+COPY ./templates/ ./templates/
 
 CMD python -m src
