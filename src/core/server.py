@@ -33,7 +33,7 @@ crashtrak = __import__("src.modules.crashtrak", fromlist=["mod_auth"])
 ncl = __import__("src.modules.ncl", fromlist=["mod_auth"])
 
 app.register_blueprint(crashtrak.mod_auth)
-app.register_blueprint(ncl.mod_auth)
+app.register_blueprint(ncl.mode_ncl)
 
 
 def gen_unique_token(length=32):
