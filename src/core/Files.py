@@ -1,11 +1,17 @@
 import os
-import ulid
+import random
 
 BASE_STORAGE_DIR = "./files"
 
 
+def gen_filename(length=32):
+    alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+    return "".join([random.choice(alphabet) for _ in range(length)])
+
+
 def get_new_uniq_file_path(prefix=""):
-    name = str(ulid.api.new())
+    name = gen_filename()
 
     if len(prefix) > 0:
         name = prefix + "_" + name

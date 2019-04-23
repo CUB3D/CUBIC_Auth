@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Application requests access to account</title>
+    <style>
+      div,p {
+        text-align: center;
+      }
+    </style>
+
+    {% include "css_common.html" %}
+</head>
+<body>
+  <div id="fcontainermodal" class="modal active">
+    <div id="fcontainer" class="active menu">
+      <p class="menu-item">Would you like to give {{appName}} access to your account</p>
+
+      <input type="button" class="btn btn-primary" name="Yes"/>
+      <input type="button" class="btn" name="No"/>
+
+      <div class="menu-item">
+        <label class="menu-item">{{username}}
+          <figure class="avatar" data-initial="{{username[0]}}" style="background-color: #5755d9;"></figure>
+        </label>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
