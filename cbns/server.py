@@ -3,13 +3,12 @@ from starlette.websockets import WebSocketDisconnect
 from starlette.responses import JSONResponse
 import aioredis
 from aioredis.pubsub import Receiver
+import asyncio
+import sys
 
 app = Starlette()
 
-# redis_server = redis.Redis(host='redis', port=6379, password='')
-
 REDIS_URL = "redis://redis:6379"
-
 
 @app.websocket_route('/')
 async def ws_(ws):
@@ -18,39 +17,38 @@ async def ws_(ws):
     await ws.close()
 
 
-async def poll_channel_manager(ws, channel):
+async def poll_channel_manager(ws, reciever):
     try:
-        while await channel.wait_message():
-            msg = await channel.get(encoding='utf-8')
+        async for channel, msg in reciever.iter(encoding='utf-8'):
+            print(f"Got message: {msg} on {channel.name.decode('utf-8')} {ws.application_state}", file=sys.stderr)
 
-            if msg:
-                print(f"Got message: {msg}")
-
-                await ws.send_text(msg)
-    except WebSocketDisconnect as e:
-        print(e)
-    finally:
-        print(f"Client {id} dc")
+            await ws.send_text(msg)
+    except Exception as e:
+        print(e, file=sys.stderr)
+    print(f"Client {ws} dc", file=sys.stderr)
 
 
 @app.websocket_route('/poll/{id}')
 async def poll_for_notifications(ws):
     id = ws.path_params['id']
     await ws.accept()
+    print(f"Starting poll for {id}", file=sys.stderr)
 
     redis_server = await aioredis.create_redis(REDIS_URL)
     await redis_server.sadd('connected_devices', id)
 
-    # multi_reciever = Receiver()
-    # await redis_server.subscribe
+    multi_reciever = Receiver()
 
+    channel_device = multi_reciever.channel(f"channel_device_{id}")
+    channel_common = multi_reciever.channel("channel_device_common")
+    await redis_server.subscribe(channel_device, channel_common)
 
-    channel_device, channel_common = await redis_server.subscribe(f"channel_device_{id}", "channel_device_common")
-    print(f"Starting poll for {id}")
+    await poll_channel_manager(ws, multi_reciever)
 
-    await poll_channel_manager(ws, channel_common)
-
+    print(f"Closing websocket for {id}", file=sys.stderr)
     await ws.close()
+    # Need a new redis instance, the other one is locked to sub mode after .subscribe
+    redis_server = await aioredis.create_redis(REDIS_URL)
     await redis_server.srem('connected_devices', id)
 
 
