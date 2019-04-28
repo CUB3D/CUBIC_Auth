@@ -3,12 +3,12 @@ from starlette.websockets import WebSocketDisconnect
 from starlette.responses import JSONResponse
 import aioredis
 from aioredis.pubsub import Receiver
-import asyncio
 import sys
 
 app = Starlette()
 
 REDIS_URL = "redis://redis:6379"
+
 
 @app.websocket_route('/')
 async def ws_(ws):

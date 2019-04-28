@@ -15,6 +15,6 @@ def add_feature_suggest():
 @mod_ncl.route("static_config")
 def app_ncl_static_config():
     return json.dumps({
-        "version": 214,
+        "version": 219,
         "url_arm": "https://cloud.cub3d.pw/index.php/s/XBENdiMkTAFAQN9/download"
     })
