@@ -1,10 +1,22 @@
-FROM python:3.7-slim
+ARG BASE_IMAGE=ekidd/rust-musl-builder:latest
 
-WORKDIR /home/code
+# Our first FROM statement declares the build environment.
+FROM ${BASE_IMAGE} AS builder
 
-COPY ./requirements.txt ./
-RUN pip install -r requirements.txt
+# Add our source code.
+ADD . ./
 
-COPY update.py ./
+# Fix permissions on source code.
+RUN sudo chown -R rust:rust /home/rust
 
-CMD python update.py
+# Build our application.
+RUN cargo build --release
+
+# Now, we need to build our _real_ Docker container.
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+COPY --from=builder \
+    /home/rust/src/target/x86_64-unknown-linux-musl/release/cbns_globalUpdate \
+    /usr/local/bin/
+
+CMD /usr/local/bin/cbns_globalUpdate
