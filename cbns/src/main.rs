@@ -1,5 +1,3 @@
-extern crate redis_async;
-
 use actix::*;
 
 use actix_web_actors::{ws, HttpContext};
@@ -7,15 +5,13 @@ use actix_web::{HttpResponse, web, HttpRequest, HttpServer, App, Error as AWErro
 use actix_web_actors::ws::Message;
 use serde::Deserialize;
 use futures::future::{Future, ok};
-use actix_redis::RedisActor;
-use redis_async::client;
 use std::net::SocketAddr;
 use futures::stream::Stream;
 
 extern crate futures;
 extern crate tokio;
 use std::str::FromStr;
-use crate::redis_async::resp::FromResp;
+use std::time::Duration;
 
 #[derive(Deserialize)]
 struct PostRequest {
@@ -40,7 +36,6 @@ fn socket_poll(
 fn message_post(
     req: HttpRequest,
     path: web::Path<PostRequest>,
-    redis: web::Data<Addr<RedisActor>>,
     srv: web::Data<Addr<NotificationServer>>
 ) -> impl Future<Item = HttpResponse, Error = AWError> {
 
@@ -118,11 +113,19 @@ struct WSNotificationSession {
     server_address: Addr<NotificationServer>,
 }
 
+const DEVICE_STATUS_UPDATE_INTERVAL: Duration = Duration::from_secs(8 * 60);
+
 impl Actor for WSNotificationSession {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
         println!("New websocket!");
+
+        // Start the device notifier
+        ctx.run_interval(DEVICE_STATUS_UPDATE_INTERVAL, |act, ctx | {
+            ctx.text("device_update_status");
+        });
+
 
         let addr = ctx.address();
         self.server_address
@@ -160,44 +163,25 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for WSNotificationSession {
 }
 
 fn main() -> std::io::Result<()> {
-//    std::env::set_var("RUST_LOG", "actix_web=info");
-//    env_logger::init();
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    env_logger::init();
 
     let system = actix::System::new("cbns");
 
     let server = NotificationServer::default().start();
 
     HttpServer::new(move || {
-
-        let redis_connection = RedisActor::start("127.0.0.1:6379");
-
         App::new()
             .data(server.clone())
-            .data(redis_connection)
-//            .wrap(middleware::Logger::default())
+            .wrap(middleware::Logger::default())
             .service(web::resource("/poll/{token}").to(socket_poll))
             .service(web::resource("/post/{destination}/{data}").route(
                 web::post().to_async(message_post)
             ))
     })
         .bind("0.0.0.0:8080").unwrap()
-        .workers(500)
+        .workers(20)
         .start();
-
-
-    let addr = SocketAddr::from_str("127.0.0.1:6379").unwrap();
-
-
-    let msgs =
-        client::pubsub_connect(&addr).and_then(move |connection| connection.subscribe("channel_device_common"));
-    let the_loop = msgs.map_err(|_| ()).and_then(|msgs| {
-        msgs.for_each(|message| {
-            println!("{}", String::from_resp(message).unwrap());
-            ok(())
-        })
-    });
-
-    Arbiter::spawn(the_loop);
 
     system.run()
 }

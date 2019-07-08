@@ -19,12 +19,6 @@ services:
     build: ./cbns
     ports:
       - "8088:8080"
-    depends_on:
-      - redis
-  cbns_update:
-    build: ./cbns_globalUpdate
-    depends_on:
-      - cbns
 
 volumes:
   auth_files:
