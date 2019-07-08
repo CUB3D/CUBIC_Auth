@@ -1,0 +1,31 @@
+[package]
+name = "cbns"
+version = "0.1.0"
+authors = ["CUB3D <callumthom11@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix = "*"
+actix-web = "*"
+actix-web-actors = "*"
+actix-redis = { git="https://github.com/actix/actix-redis.git" }
+
+json = "*"
+serde = "*"
+serde_derive = "*"
+redis-async = "*"
+futures = "*"
+tokio = "*"
+env_logger = "*"
+
+[profile.release]
+codegen-units = 1
+opt-level = 3
+incremental = false
+debug = false
+debug-assertions = false
+panic = "abort"
+overflow-checks = false
+lto = "fat"

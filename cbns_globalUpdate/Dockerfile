@@ -4,7 +4,8 @@ ARG BASE_IMAGE=ekidd/rust-musl-builder:latest
 FROM ${BASE_IMAGE} AS builder
 
 # Add our source code.
-ADD . ./
+ADD ./src/ ./src/
+ADD ./Cargo.toml .
 
 # Fix permissions on source code.
 RUN sudo chown -R rust:rust /home/rust

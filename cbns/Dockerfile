@@ -1,13 +1,23 @@
-FROM python:3.7-slim
+ARG BASE_IMAGE=ekidd/rust-musl-builder:latest
 
-WORKDIR /home/code
+# Our first FROM statement declares the build environment.
+FROM ${BASE_IMAGE} AS builder
 
-RUN apt update && apt upgrade -y && apt install -y gcc
+# Add our source code.
+ADD ./src/ ./src/
+ADD Cargo.toml .
 
-COPY ./requirements.txt ./
-RUN pip install -r requirements.txt
+# Fix permissions on source code.
+RUN sudo chown -R rust:rust /home/rust
 
-COPY server.py ./
+# Build our application.
+RUN cargo build --release
 
-#CMD hypercorn -w 16 --error-log - --access-log - -b 0.0.0.0:8080 --debug server:app
-CMD uvicorn --host 0.0.0.0 --port 8080 --log-level info server:app
+# Now, we need to build our _real_ Docker container.
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+COPY --from=builder \
+    /home/rust/src/target/x86_64-unknown-linux-musl/release/cbns \
+    /usr/local/bin/
+
+CMD /usr/local/bin/cbns
