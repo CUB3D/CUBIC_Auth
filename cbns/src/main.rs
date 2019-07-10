@@ -42,6 +42,10 @@ fn socket_poll(
     )
 }
 
+fn root_handle() -> Result<HttpResponse, AWError> {
+    Ok(HttpResponse::Ok().body("<h1>404 Not Found</h1>"))
+}
+
 fn message_post(
     req: HttpRequest,
     path: web::Path<PostRequest>,
@@ -67,6 +71,7 @@ fn main() -> std::io::Result<()> {
         App::new()
             .data(server.clone())
             .wrap(middleware::Logger::default())
+            .service(web::resource("/").to(root_handle))
             .service(web::resource("/poll/{token}").to(socket_poll))
             .service(web::resource("/post/{destination}/{data}").route(
                 web::post().to_async(message_post)
