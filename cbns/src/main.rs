@@ -10,6 +10,11 @@ use futures::stream::Stream;
 
 extern crate futures;
 extern crate tokio;
+
+#[macro_use]
+extern crate debug_rs;
+
+
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -35,7 +40,8 @@ fn socket_poll(
 ) -> Result<HttpResponse, AWError> {
     ws::start(
         WSNotificationSession {
-            server_address: srv.get_ref().clone()
+            server_address: srv.get_ref().clone(),
+            uid: 0
         },
         &req,
         stream,

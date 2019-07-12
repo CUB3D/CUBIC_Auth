@@ -7,21 +7,31 @@ use actix::prelude::fut;
 use crate::notification_server::NotificationServer;
 use crate::futures::Future;
 
+
 pub struct WSNotificationSession {
     pub server_address: Addr<NotificationServer>,
+    // The id of this client
+    pub uid: usize
 }
 
 const DEVICE_STATUS_UPDATE_INTERVAL: Duration = Duration::from_secs(8 * 60);
+//TODO: test different durations for this
+// Set the delay between keep-alive pings
+const DEVICE_PING_INTERVAL: Duration = Duration::from_secs(10);
 
 impl Actor for WSNotificationSession {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        println!("New websocket!");
-
         // Start the device notifier
         ctx.run_interval(DEVICE_STATUS_UPDATE_INTERVAL, |act, ctx | {
             ctx.text("device_update_status");
+        });
+
+        ctx.run_interval(DEVICE_PING_INTERVAL, | act, ctx | {
+            debug!("Sending ping");
+//            ctx.text("");
+            ctx.ping("");
         });
 
 
@@ -31,6 +41,10 @@ impl Actor for WSNotificationSession {
                 addr: addr.recipient(),
             }).into_actor(self)
             .then(|res, act, ctx| {
+                match res {
+                    Ok(uid) => act.uid = uid,
+                    _ => ctx.stop(),
+                }
 //                match res {
 //                    Ok(res) => act.id = res,
 //                    _ => ctx.stop(),
@@ -45,7 +59,7 @@ impl Actor for WSNotificationSession {
 
         //TODO: error handling
         self.server_address.send(DisconnectMsg {
-            addr: ctx.address().recipient()
+            uid: self.uid
         }).wait();//.into_actor(self).wait(ctx);
 
         Running::Stop

@@ -1,8 +1,11 @@
 use actix::{Recipient, Actor, Context, Handler};
 use crate::messages::{PushedMsg, ConnectMsg, NotificationMsg, DisconnectMsg};
+use std::iter::Map;
+use std::collections::HashMap;
+use rand::Rng;
 
 pub struct NotificationServer {
-    pub clients: Vec<Recipient<PushedMsg>>
+    pub clients_map: HashMap<usize, Recipient<PushedMsg>>
 }
 
 impl Actor for NotificationServer {
@@ -12,18 +15,23 @@ impl Actor for NotificationServer {
 impl Default for NotificationServer {
     fn default() -> Self {
         NotificationServer {
-            clients: Vec::new()
+            clients_map: HashMap::new()
         }
     }
 }
 
 impl Handler<ConnectMsg> for NotificationServer {
-    type Result = ();
+    type Result = usize;
 
     fn handle(&mut self, msg: ConnectMsg, _: &mut Context<Self>) -> Self::Result {
-        println!("Registering new socket");
 
-        self.clients.push(msg.addr);
+        let uid = rand::thread_rng().gen();
+
+        self.clients_map.insert(uid, msg.addr);
+
+        println!("Registered new socket with uid '{}'", uid);
+
+        uid
     }
 }
 
@@ -31,8 +39,9 @@ impl Handler<DisconnectMsg> for NotificationServer {
     type Result = ();
 
     fn handle(&mut self, msg: DisconnectMsg, _: &mut Context<Self>) -> Self::Result {
-//        self.clients.remove()
-        unimplemented!("Remove client on DC")
+        println!("Socket '{}' disconnected", msg.uid);
+
+        self.clients_map.remove(&msg.uid);
     }
 }
 
@@ -42,7 +51,7 @@ impl Handler<NotificationMsg> for NotificationServer {
     fn handle(&mut self, msg: NotificationMsg, _: &mut Context<Self>) -> Self::Result {
 //        println!("Got message {} for channel {}", &msg.message, &msg.channel);
 
-        for client in &self.clients {
+        for client in self.clients_map.values() {
             if let Err(x)  = client.do_send(PushedMsg {
                 message: msg.message.clone()
             }) {

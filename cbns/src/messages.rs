@@ -1,13 +1,14 @@
 use actix::{Recipient, Addr};
 
 #[derive(actix::Message)]
+#[rtype(usize)]
 pub struct ConnectMsg {
     pub addr: Recipient<PushedMsg>
 }
 
 #[derive(actix::Message)]
 pub struct DisconnectMsg {
-    pub addr: Recipient<PushedMsg>
+    pub uid: usize
 }
 
 #[derive(actix::Message)]
