@@ -33,6 +33,10 @@ struct PostRequest {
     data: String
 }
 
+fn root_handler() -> Result<HttpResponse, AWError> {
+    Ok(HttpResponse::Ok().body("Hello, World!"))
+}
+
 fn socket_poll(
     req: HttpRequest,
     stream: web::Payload,
@@ -73,6 +77,7 @@ fn main() -> std::io::Result<()> {
         App::new()
             .data(server.clone())
             .wrap(middleware::Logger::default())
+            .service(web::resource("/").to(root_handler))
             .service(web::resource("/poll/{token}").to(socket_poll))
             .service(web::resource("/post/{destination}/{data}").route(
                 web::post().to_async(message_post)
