@@ -1,6 +1,4 @@
-# -*- coding: future_fstrings -*-
 from flask import Flask, request, render_template, redirect, make_response, url_for
-from flask_uwsgi_websocket import GeventWebSocket
 import functools
 import time
 import bcrypt
@@ -8,8 +6,6 @@ import os
 import secrets
 import sqlite3
 import base64
-from flask_redis import FlaskRedis
-import redis
 import multiprocessing
 import json
 #from src.modules.idcarddetect import detect_flask
@@ -23,8 +19,6 @@ from src.models.LocationHistory import LocationHistory
 from src.models.Application import Application
 
 app = Flask(__name__, template_folder="/home/code/templates/")
-websocket = GeventWebSocket(app)
-app.config["REDIS_URL"] = "redis://:@localhost:6379/0"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../../Test.db"
 
 src.database.init(app)
@@ -292,13 +286,6 @@ def newDevice(name):
     return resp
 
 
-@app.route("/pingDevice/<token>")
-def ping(token):
-    redis_store = FlaskRedis(app)
-    redis_store.publish("channel_device_{}".format(token), "Ping")
-    return "Pinge'd"
-
-
 @app.route("/api/updateDevice/<token>/<bat>/<lat>/<long>")
 def updateDevice(token, bat, lat, long):
     # Get the device
@@ -345,22 +332,9 @@ def newAccount():
 
     return redirect("/login")
 
-
-# def pingDevicesThread():
-#     """
-#     Every 10 minutes, ping every known device to see if they are active
-#     :return:
-#     """
-#     r = redis.Redis(host="localhost")
-#     while True:
-#         r.publish("channel_device_common", "device_update_status")
-#         print("Global update done")
-#         time.sleep(15 * 60)
-
-
 def start():
     # multiprocessing.Process(target=pingDevicesThread).start()
-    app.run(host="0.0.0.0", port=8080, gevent=100, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)
 
 
 if __name__ == '__main__':

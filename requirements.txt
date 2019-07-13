@@ -1,13 +1,8 @@
 gunicorn
 bcrypt
-redis
 Flask
 Flask-Alembic
-Flask-Redis
 Flask-SQLAlchemy
-future-fstrings
-flask_uwsgi_websocket
-flask_redis
 gevent
 alembic
 sqlalchemy

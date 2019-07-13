@@ -9,12 +9,6 @@ services:
       - auth_files:/home/code/files
     environment:
       - ENV=${ENV}
-    depends_on:
-      - redis
-  redis:
-    image: redis
-    ports:
-      - "6379:6379"
   cbns:
     build: ./cbns
     ports:
