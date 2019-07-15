@@ -21,3 +21,10 @@ pub struct NotificationMsg {
 pub struct PushedMsg {
     pub message: String
 }
+
+//TODO: make this return an object and convert that obj to json in route handler
+#[rtype(String)]
+#[derive(actix::Message)]
+pub struct DeviceStatusRequestMsg {
+    pub token: String
+}

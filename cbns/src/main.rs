@@ -33,6 +33,11 @@ struct PostRequest {
     data: String
 }
 
+#[derive(Deserialize)]
+struct TokenExtractor {
+    token: String
+}
+
 fn root_handler() -> Result<HttpResponse, AWError> {
     Ok(HttpResponse::Ok().body("Hello, World!"))
 }
@@ -62,7 +67,20 @@ fn message_post(
         message: path.data.clone()
     }).wait().unwrap();
 
-    ok(HttpResponse::InternalServerError().finish())
+    ok(HttpResponse::Ok().body("Ok"))
+}
+
+fn message_device_status(
+    srv: web::Data<Addr<NotificationServer>>,
+    path: web::Path<TokenExtractor>,
+) -> Result<HttpResponse, AWError> {
+    let status = srv.send(DeviceStatusRequestMsg {
+        token: path.token
+    }).wait().unwrap();
+
+    Ok(HttpResponse::Ok()
+        .content_type("application/json; encoding=utf-8")
+        .body(status))
 }
 
 fn main() -> std::io::Result<()> {
@@ -79,6 +97,9 @@ fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .service(web::resource("/").to(root_handler))
             .service(web::resource("/poll/{token}").to(socket_poll))
+            .service(web::resource("/status/{token}").route(
+                web::get().to(message_device_status)
+            ))
             .service(web::resource("/post/{destination}/{data}").route(
                 web::post().to_async(message_post)
             ))

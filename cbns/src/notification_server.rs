@@ -1,5 +1,5 @@
 use actix::{Recipient, Actor, Context, Handler};
-use crate::messages::{PushedMsg, ConnectMsg, NotificationMsg, DisconnectMsg};
+use crate::messages::{PushedMsg, ConnectMsg, NotificationMsg, DisconnectMsg, DeviceStatusRequestMsg};
 use std::iter::Map;
 use std::collections::HashMap;
 use rand::Rng;
@@ -56,6 +56,24 @@ impl Handler<NotificationMsg> for NotificationServer {
                 message: msg.message.clone()
             }) {
                 eprintln!("Error messaging, {:?}", x)
+            }
+        }
+    }
+}
+
+impl Handler<DeviceStatusRequestMsg> for NotificationServer {
+    type Result = String;
+
+    fn handle(&mut self, msg: DeviceStatusRequestMsg, _: &mut Context<Self>) -> Self::Result {
+        let device = self.clients_map[msg.token];
+
+        match device {
+            Err(_) => {
+                "Device Not Found".to_string()
+            },
+
+            Ok(dev) => {
+                "Device Connected".to_string()
             }
         }
     }
