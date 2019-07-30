@@ -11,7 +11,8 @@ use crate::futures::Future;
 pub struct WSNotificationSession {
     pub server_address: Addr<NotificationServer>,
     // The id of this client
-    pub uid: usize
+    pub uid: usize,
+    pub token: String
 }
 
 const DEVICE_STATUS_UPDATE_INTERVAL: Duration = Duration::from_secs(8 * 60);
@@ -39,6 +40,7 @@ impl Actor for WSNotificationSession {
         self.server_address
             .send(ConnectMsg {
                 addr: addr.recipient(),
+                token: self.token.clone()
             }).into_actor(self)
             .then(|res, act, ctx| {
                 match res {

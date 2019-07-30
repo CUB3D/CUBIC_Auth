@@ -9,8 +9,6 @@ use std::net::SocketAddr;
 use futures::stream::Stream;
 
 extern crate futures;
-extern crate tokio;
-
 #[macro_use]
 extern crate debug_rs;
 
@@ -38,6 +36,11 @@ struct TokenExtractor {
     token: String
 }
 
+#[derive(Deserialize)]
+struct PollExtractor {
+    token: String,
+}
+
 fn root_handler() -> Result<HttpResponse, AWError> {
     Ok(HttpResponse::Ok().body("Hello, World!"))
 }
@@ -46,11 +49,16 @@ fn socket_poll(
     req: HttpRequest,
     stream: web::Payload,
     srv: web::Data<Addr<NotificationServer>>,
+    path_params: web::Path<PollExtractor>
 ) -> Result<HttpResponse, AWError> {
+
+    let params = path_params.into_inner();
+
     ws::start(
         WSNotificationSession {
             server_address: srv.get_ref().clone(),
-            uid: 0
+            uid: 0,
+            token: params.token
         },
         &req,
         stream,
@@ -70,17 +78,54 @@ fn message_post(
     ok(HttpResponse::Ok().body("Ok"))
 }
 
+fn post_channel_handle(
+    req: HttpRequest,
+    path: web::Path<PostRequest>,
+    srv: web::Data<Addr<NotificationServer>>
+) -> impl Future<Item = HttpResponse, Error = AWError> {
+    srv.send(NotificationMsg {
+        channel: path.destination.clone(),
+        message: path.data.clone()
+    }).wait().unwrap();
+
+    ok(HttpResponse::Ok().body("Ok"))
+}
+
+fn post_device_handle(
+    req: HttpRequest,
+    path: web::Path<PostRequest>,
+    srv: web::Data<Addr<NotificationServer>>
+) -> impl Future<Item = HttpResponse, Error = AWError> {
+    srv.send(NotificationMsg {
+        channel: path.destination.clone(),
+        message: path.data.clone()
+    }).wait().unwrap();
+
+    ok(HttpResponse::Ok().body("Ok"))
+}
+
 fn message_device_status(
     srv: web::Data<Addr<NotificationServer>>,
     path: web::Path<TokenExtractor>,
 ) -> Result<HttpResponse, AWError> {
     let status = srv.send(DeviceStatusRequestMsg {
-        token: path.token
+        token: path.token.clone()
     }).wait().unwrap();
 
     Ok(HttpResponse::Ok()
         .content_type("application/json; encoding=utf-8")
         .body(status))
+}
+
+fn status_handle(
+    srv: web::Data<Addr<NotificationServer>>
+) -> Result<HttpResponse, AWError> {
+    let status = srv.send(StatusRequestMsg{}).wait().unwrap();
+
+    Ok(HttpResponse::Ok()
+        .content_type("application/json; encoding=utf-8")
+        .body(status)
+    )
 }
 
 fn main() -> std::io::Result<()> {
@@ -97,11 +142,21 @@ fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .service(web::resource("/").to(root_handler))
             .service(web::resource("/poll/{token}").to(socket_poll))
+            .service(web::resource("/status").route(
+                web::get().to(status_handle)
+            ))
             .service(web::resource("/status/{token}").route(
                 web::get().to(message_device_status)
             ))
+            //TODO: remove this
             .service(web::resource("/post/{destination}/{data}").route(
                 web::post().to_async(message_post)
+            ))
+            .service(web::resource("/post/channel/{channel}").route(
+                web::post().to_async(post_channel_handle)
+            ))
+            .service(web::resource("/post/device/{token}").route(
+                web::post().to_async(post_device_handle)
             ))
     })
         .bind("0.0.0.0:8080").unwrap()

@@ -3,7 +3,8 @@ use actix::{Recipient, Addr};
 #[derive(actix::Message)]
 #[rtype(usize)]
 pub struct ConnectMsg {
-    pub addr: Recipient<PushedMsg>
+    pub addr: Recipient<PushedMsg>,
+    pub token: String
 }
 
 #[derive(actix::Message)]
@@ -27,4 +28,10 @@ pub struct PushedMsg {
 #[derive(actix::Message)]
 pub struct DeviceStatusRequestMsg {
     pub token: String
+}
+
+#[rtype(String)]
+#[derive(actix::Message)]
+pub struct StatusRequestMsg {
+
 }
