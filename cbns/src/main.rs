@@ -66,7 +66,6 @@ fn socket_poll(
 }
 
 fn message_post(
-    req: HttpRequest,
     path: web::Path<PostRequest>,
     srv: web::Data<Addr<NotificationServer>>
 ) -> impl Future<Item = HttpResponse, Error = AWError> {
@@ -79,7 +78,6 @@ fn message_post(
 }
 
 fn post_channel_handle(
-    req: HttpRequest,
     path: web::Path<PostRequest>,
     srv: web::Data<Addr<NotificationServer>>
 ) -> impl Future<Item = HttpResponse, Error = AWError> {
@@ -92,7 +90,6 @@ fn post_channel_handle(
 }
 
 fn post_device_handle(
-    req: HttpRequest,
     path: web::Path<PostRequest>,
     srv: web::Data<Addr<NotificationServer>>
 ) -> impl Future<Item = HttpResponse, Error = AWError> {
@@ -113,8 +110,8 @@ fn message_device_status(
     }).wait().unwrap();
 
     Ok(HttpResponse::Ok()
-        .content_type("application/json; encoding=utf-8")
-        .body(status))
+        .json(status)
+    )
 }
 
 fn status_handle(
@@ -123,8 +120,7 @@ fn status_handle(
     let status = srv.send(StatusRequestMsg{}).wait().unwrap();
 
     Ok(HttpResponse::Ok()
-        .content_type("application/json; encoding=utf-8")
-        .body(status)
+        .json(status)
     )
 }
 
