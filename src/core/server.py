@@ -19,7 +19,7 @@ from src.models.LocationHistory import LocationHistory
 from src.models.Application import Application
 
 app = Flask(__name__, template_folder="/home/code/templates/")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../../Test.db"
+app.config.from_envvar('APP_CONFIG')
 
 src.database.init(app)
 

@@ -20,7 +20,7 @@ def upgrade():
     op.create_table(
         'Session',
         sa.Column('SessionID', sa.Integer, primary_key=True),
-        sa.Column('SessionToken', sa.VARCHAR, nullable=False, unique=True),
+        sa.Column('SessionToken', sa.VARCHAR(128), nullable=False, unique=True),
         sa.Column('UserID', sa.Integer, nullable=False),
         sa.ForeignKeyConstraint(['UserID'], ['User.UserID'], ),
     )

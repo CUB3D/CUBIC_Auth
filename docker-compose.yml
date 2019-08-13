@@ -9,6 +9,7 @@ services:
       - auth_files:/home/code/files
     environment:
       - ENV=${ENV}
+      - APP_CONFIG=${APP_CONFIG}
   cbns:
     build: ./cbns
     ports:

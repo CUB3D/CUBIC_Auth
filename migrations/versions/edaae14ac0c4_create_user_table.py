@@ -21,7 +21,7 @@ def upgrade():
         'User',
         sa.Column('UserID', sa.Integer, primary_key=True),
         sa.Column('Username', sa.Unicode(50), nullable=False, unique=True),
-        sa.Column('PasswordHash', sa.VARCHAR, nullable=False),
+        sa.Column('PasswordHash', sa.VARCHAR(128), nullable=False),
     )
 
 

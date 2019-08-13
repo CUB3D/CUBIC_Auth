@@ -6,11 +6,9 @@ Flask-SQLAlchemy
 gevent
 alembic
 sqlalchemy
+mysql
 
 opencv-python
 matplotlib
 pillow
 pytesseract
-
-
-
