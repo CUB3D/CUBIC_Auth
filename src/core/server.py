@@ -124,6 +124,27 @@ def requireLogin(view):
 
     return wrapper
 
+@app.route("/app/user/<token>")
+def app_user_details(token):
+    """
+    Return the detail of a user for a given user application token, this allows the client to access the users details for use in their app
+    :param token: The UserApplication token
+    :return: User details, and the token for convenience
+    """
+    userApp = UserApplication.query.filter(UserApplication.Token == token).first()
+
+    if userApp is None:
+        return None
+
+    user = User.query.filter(User.UserID == userApp.UserID).first()
+
+    if user is None:
+        return None
+
+    return json.dumps({
+        "Name": user.Username,
+        "Token": token
+    })
 
 @app.route("/app/<token>/auth")
 def appLogin(token):
