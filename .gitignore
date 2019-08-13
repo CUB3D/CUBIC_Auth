@@ -5,3 +5,4 @@ Test.db
 dependencies
 *.iml
 .env
+./alembic.ini

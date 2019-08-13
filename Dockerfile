@@ -2,7 +2,7 @@ FROM python:3.7-slim
 
 WORKDIR /home/code
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y gcc
+RUN apt-get update && apt-get upgrade -y && apt-get install -y gcc libmariadbclient-dev
 #libglib2.0-0 libsm-dev libopencv-*
 
 COPY ./requirements.txt ./

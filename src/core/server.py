@@ -17,8 +17,9 @@ from src.models.Device import Device
 from src.models.SessionAccess import SessionAccess
 from src.models.LocationHistory import LocationHistory
 from src.models.Application import Application
+from src.models.UserApplication import UserApplication
 
-app = Flask(__name__, template_folder="/home/code/templates/")
+app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates/"))
 app.config.from_envvar('APP_CONFIG')
 
 src.database.init(app)
@@ -65,7 +66,7 @@ def default():
 
 @app.route("/resource/<type>/<file>")
 def script(type, file):
-    with open(os.path.join("/home/code/resource/", os.path.basename(file)), "r") as f:
+    with open(os.path.join(os.getcwd(), "resource/", os.path.basename(file)), "r") as f:
         resp = make_response(f.read())
         resp.mimetype = "text/" + type
         return resp
@@ -95,6 +96,8 @@ def getCurrentUserDetails():
 
     session = Session.query.filter(Session.SessionToken == token).first()
 
+
+    #TODO: Maybe just return user obj
     user = User.query.filter(User.UserID == session.UserID).first()
 
     if user is not None:
@@ -124,12 +127,19 @@ def requireLogin(view):
 
 @app.route("/app/<token>/auth")
 def appLogin(token):
-
     application = Application.query.filter(Application.ApplicationToken == token).first()
 
     # If the id is invalid then redirect to login page
     if application is None:
         return redirect(url_for("login"))
+
+    # Show a login accept page
+
+    return render_template("application_auth.html",
+                           app_name=application.ApplicationName,
+                           app_desc=application.Description,
+                           app_token=token
+                           )
 
     return application.url
 
@@ -137,6 +147,39 @@ def appLogin(token):
     #if they have then direct back with a token
 
     #if not redirect back without login also if no on accept page
+
+@app.route("/app/<token>/reject")
+def app_reject(token):
+    application = Application.query.filter(Application.ApplicationToken == token).first()
+
+    # If the id is invalid then redirect to login page
+    if application is None:
+        return redirect(url_for("login"))
+
+    #TODO: add rejection url
+    return redirect(application.url)
+
+
+@app.route("/app/<token>/accept")
+def app_accept(token):
+    """
+    If the user accepts a sso request then take then to this page, we will note that they have given permission and then
+    give the app a special token to use to get the users details
+    :param token: The application token
+    :return:
+    """
+    application = Application.query.filter(Application.ApplicationToken == token).first()
+
+    user = getCurrentUserDetails()
+
+    user_app_token = gen_unique_token()
+    UserApplication(user["UserID"], application.ApplicationID, user_app_token).create()
+
+    # If the id is invalid then redirect to login page
+    if application is None or user is None:
+        return redirect(url_for("login"))
+
+    return redirect("//" + application.url + "/" + user_app_token)
 
 
 @app.route("/settings/profile")

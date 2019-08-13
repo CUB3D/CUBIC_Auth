@@ -1,7 +1,6 @@
 gunicorn
 bcrypt
 Flask
-Flask-Alembic
 Flask-SQLAlchemy
 gevent
 alembic

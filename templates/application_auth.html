@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="google-site-verification" content="7hAbi00NXHOhpyI_ERYXVwkOCRISOKBLKhhSSM8Mg_Y" />
+    <title>Login</title>
+
+    <style>
+        label {
+            text-align: left;
+        }
+
+
+        .button {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 4px;
+            display: block;
+        }
+
+        #login-error {
+            margin-bottom: 2px;
+        }
+    </style>
+
+    {% include "css_common.html" %}
+</head>
+<body>
+<div id="fcontainermodal" class="modal active">
+<div id="fcontainer" class="active menu">
+
+  <p class="menu-item">{{ app_name }} would like access to your account</p>
+  <p class="menu-item">{{ app_desc }}</p>
+
+    <form class="form-group" action={{ "/app/" + app_token + "/accept" }} style="margin-top: 0;">
+        <button id="Register" class="btn btn-primary button" style="margin-top: 0;">Accept</button>
+    </form>
+    <form class="form-group" action={{ "/app/" + app_token + "/reject" }} style="margin-top: 0;">
+      <button id="Register" class="btn button" style="margin-top: 0;">Cancel</button>
+    </form>
+</div>
+</div>
+</body>
+</html>

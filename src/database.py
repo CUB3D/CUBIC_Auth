@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from flask_alembic import Alembic
+# from alembic import Alembic
+import alembic
 from flask_sqlalchemy import SQLAlchemy
-
-
-
 # Database
 
 db = SQLAlchemy()
