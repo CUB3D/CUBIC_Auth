@@ -1,9 +1,10 @@
 use actix::{Recipient, Actor, Context, Handler};
-use crate::messages::{PushedMsg, ConnectMsg, ChannelNotificationMsg, DisconnectMsg, DeviceStatusRequestMsg, StatusRequestMsg};
+use crate::messages::{PushedMsg, ConnectMsg, ChannelNotificationMsg, DisconnectMsg, DeviceStatusRequestMsg, StatusRequestMsg, DeviceNotificationMsg};
 use std::iter::Map;
 use std::collections::HashMap;
 use rand::Rng;
 
+#[derive(Clone)]
 pub struct Client {
     pub identifier: String,
     pub message_recipient: Recipient<PushedMsg>,
@@ -50,6 +51,7 @@ impl Channel {
 
 pub struct NotificationServer {
     pub channels: HashMap<String, Channel>,
+    pub clients: HashMap<String, Client>
 }
 
 impl Actor for NotificationServer {
@@ -64,6 +66,7 @@ impl Default for NotificationServer {
 
         NotificationServer {
             channels,
+            clients: HashMap::new()
         }
     }
 }
@@ -75,19 +78,23 @@ impl Handler<ConnectMsg> for NotificationServer {
         let uid = rand::thread_rng().gen();
 
         let client = Client::new(
-            msg.token,
+            msg.token.clone(),
             msg.addr,
             uid
         );
 
         println!("Registered client '{}':{}", &client.identifier, &client.uid);
 
+        // Add the client to the default channel
         let common_channel = self.channels.get_mut("device_common");
 
         if let Some(c) = common_channel {
             println!("Client '{}' registering for 'device_common'", &client.identifier);
-            c.clients.push(client);
+            c.clients.push(client.clone());
         }
+
+        // Add them to the conected clients as well
+        self.clients.insert(msg.token, client);
 
         uid
     }
@@ -122,7 +129,7 @@ impl Handler<ChannelNotificationMsg> for NotificationServer {
                 );
 
                 if let Err(status) = status {
-                    eprintln!("Unable to send messsage to client: '{}'", client.identifier);
+                    eprintln!("Unable to send message to client: '{}'", client.identifier);
                 }
             }
         }
@@ -159,5 +166,23 @@ impl Handler<StatusRequestMsg> for NotificationServer {
         }
 
         s.to_string()
+    }
+}
+
+impl Handler<DeviceNotificationMsg> for NotificationServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: DeviceNotificationMsg, _: &mut Context<Self>) -> Self::Result {
+        if let Some(client) = self.clients.get(msg.device_token.as_str()) {
+            let status = client.message_recipient.do_send(
+                PushedMsg {
+                    message: msg.message.clone()
+                }
+            );
+
+            if let Err(status) = status {
+                eprintln!("Unable to send message to client: '{}'", client.identifier);
+            }
+        }
     }
 }

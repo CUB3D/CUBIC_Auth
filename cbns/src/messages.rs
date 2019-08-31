@@ -19,7 +19,7 @@ pub struct ChannelNotificationMsg {
 }
 
 #[derive(actix::Message)]
-pub struct DeviceChannelNotificationMsg {
+pub struct DeviceNotificationMsg {
     pub device_token: String,
     pub message: String
 }
