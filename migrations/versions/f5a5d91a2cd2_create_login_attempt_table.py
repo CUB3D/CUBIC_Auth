@@ -20,7 +20,7 @@ def upgrade():
     op.create_table(
         'LoginAttempt',
         sa.Column('AttemptID', sa.Integer, primary_key=True),
-        sa.Column('Username', sa.VARCHAR, nullable=False),
+        sa.Column('Username', sa.VARCHAR(128), nullable=False),
         sa.Column('AccessTime', sa.Integer, nullable=False),
         sa.Column('Success', sa.Integer, nullable=False),
     )

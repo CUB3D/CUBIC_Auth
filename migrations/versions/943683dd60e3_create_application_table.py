@@ -20,11 +20,11 @@ def upgrade():
     op.create_table(
         'Application',
         sa.Column('ApplicationID', sa.Integer, primary_key=True),
-        sa.Column('ApplicationToken', sa.VARCHAR, nullable=False, unique=True),
+        sa.Column('ApplicationToken', sa.VARCHAR(128), nullable=False, unique=True),
         sa.Column('CreationTime', sa.Integer, nullable=False),
         sa.Column('OwnerID', sa.Integer, nullable=False),
-        sa.Column('Description', sa.VARCHAR, nullable=False),
-        sa.Column('ApplicationName', sa.VARCHAR, nullable=False),
+        sa.Column('Description', sa.VARCHAR(128), nullable=False),
+        sa.Column('ApplicationName', sa.VARCHAR(128), nullable=False),
         sa.ForeignKeyConstraint(['OwnerID'], ['User.UserID'], ),
     )
 

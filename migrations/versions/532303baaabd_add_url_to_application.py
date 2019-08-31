@@ -17,7 +17,7 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('Application', sa.Column('url', sa.VARCHAR, nullable=False, server_default="https://auth.cub3d.pw"))
+    op.add_column('Application', sa.Column('url', sa.VARCHAR(128), nullable=False, server_default="https://auth.cub3d.pw"))
 
 
 def downgrade():

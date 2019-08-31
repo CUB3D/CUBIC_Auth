@@ -1,6 +1,4 @@
-# -*- coding: future_fstrings -*-
 from flask import Flask, request, render_template, redirect, make_response, url_for
-from flask_uwsgi_websocket import GeventWebSocket
 import functools
 import time
 import bcrypt
@@ -8,8 +6,6 @@ import os
 import secrets
 import sqlite3
 import base64
-from flask_redis import FlaskRedis
-import redis
 import multiprocessing
 import json
 #from src.modules.idcarddetect import detect_flask
@@ -21,11 +17,10 @@ from src.models.Device import Device
 from src.models.SessionAccess import SessionAccess
 from src.models.LocationHistory import LocationHistory
 from src.models.Application import Application
+from src.models.UserApplication import UserApplication
 
-app = Flask(__name__, template_folder="/home/code/templates/")
-websocket = GeventWebSocket(app)
-app.config["REDIS_URL"] = "redis://:@localhost:6379/0"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../../Test.db"
+app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates/"))
+app.config.from_envvar('APP_CONFIG')
 
 src.database.init(app)
 
@@ -71,7 +66,7 @@ def default():
 
 @app.route("/resource/<type>/<file>")
 def script(type, file):
-    with open(os.path.join("/home/code/resource/", os.path.basename(file)), "r") as f:
+    with open(os.path.join(os.getcwd(), "resource/", os.path.basename(file)), "r") as f:
         resp = make_response(f.read())
         resp.mimetype = "text/" + type
         return resp
@@ -101,6 +96,8 @@ def getCurrentUserDetails():
 
     session = Session.query.filter(Session.SessionToken == token).first()
 
+
+    #TODO: Maybe just return user obj
     user = User.query.filter(User.UserID == session.UserID).first()
 
     if user is not None:
@@ -127,22 +124,91 @@ def requireLogin(view):
 
     return wrapper
 
+@app.route("/app/user/<token>")
+def app_user_details(token):
+    """
+    Return the detail of a user for a given user application token, this allows the client to access the users details for use in their app
+    :param token: The UserApplication token
+    :return: User details, and the token for convenience
+    """
+    userApp = UserApplication.query.filter(UserApplication.Token == token).first()
+
+    if userApp is None:
+        return None
+
+    user = User.query.filter(User.UserID == userApp.UserID).first()
+
+    if user is None:
+        return None
+
+    return json.dumps({
+        "Name": user.Username,
+        "Token": token
+    })
+
 
 @app.route("/app/<token>/auth")
 def appLogin(token):
+    application = Application.query.filter(Application.ApplicationToken == token).first()
+    user = getCurrentUserDetails()
 
+    # If the id is invalid then redirect to login page
+    if application is None:
+        return redirect(url_for("login"))
+
+    # Has the user already authed the service
+    userApp = UserApplication.query.filter((UserApplication.UserID == user["UserID"]) & (UserApplication.ApplicationID == application.ApplicationID)).first()
+
+    if userApp is None:
+        print("Redirecting to app auth for " + token)
+        # Show a login accept page
+        return render_template("application_auth.html",
+                               app_name=application.ApplicationName,
+                               app_desc=application.Description,
+                               app_token=token
+                               )
+    else:
+        print("User has already accepted application " + token)
+        # instantly redirect back
+        return redirect("//" + application.url + "/" + userApp.Token)
+
+    #if it is not, check if the current user has accepted it before, if not show a accept page
+    #if they have then direct back with a token
+
+    #if not redirect back without login also if no on accept page
+
+@app.route("/app/<token>/reject")
+def app_reject(token):
     application = Application.query.filter(Application.ApplicationToken == token).first()
 
     # If the id is invalid then redirect to login page
     if application is None:
         return redirect(url_for("login"))
 
-    return application.url
+    #TODO: add rejection url
+    return redirect(application.url)
 
-    #if it is not, check if the current user has accepted it before, if not show a accept page
-    #if they have then direct back with a token
 
-    #if not redirect back without login also if no on accept page
+@app.route("/app/<token>/accept")
+def app_accept(token):
+    """
+    If the user accepts a sso request then take then to this page, we will note that they have given permission and then
+    give the app a special token to use to get the users details
+    :param token: The application token
+    :return:
+    """
+    application = Application.query.filter(Application.ApplicationToken == token).first()
+
+    user = getCurrentUserDetails()
+
+    user_app_token = gen_unique_token()
+    UserApplication(user["UserID"], application.ApplicationID, user_app_token).create()
+
+    # If the id is invalid then redirect to login page
+    if application is None or user is None:
+        return redirect(url_for("login"))
+
+    return redirect("//" + application.url + "/" + user_app_token)
 
 
 @app.route("/settings/profile")
@@ -174,11 +240,11 @@ def developer():
 def newApplication():
     applicationName = request.form["appName"]
     applicationDesc = request.form["appDesc"]
+    applicationUrl = request.form["redirect-url"]
     token = gen_unique_token()
     userInfo = getCurrentUserDetails()
-    url = "cub3d.pw"
 
-    Application(token, userInfo["UserID"], applicationDesc, applicationName, url).create()
+    Application(token, userInfo["UserID"], applicationDesc, applicationName, applicationUrl).create()
 
     return render_template("application_create.html", appID=token)
 
@@ -292,13 +358,6 @@ def newDevice(name):
     return resp
 
 
-@app.route("/pingDevice/<token>")
-def ping(token):
-    redis_store = FlaskRedis(app)
-    redis_store.publish("channel_device_{}".format(token), "Ping")
-    return "Pinge'd"
-
-
 @app.route("/api/updateDevice/<token>/<bat>/<lat>/<long>")
 def updateDevice(token, bat, lat, long):
     # Get the device
@@ -345,22 +404,9 @@ def newAccount():
 
     return redirect("/login")
 
-
-# def pingDevicesThread():
-#     """
-#     Every 10 minutes, ping every known device to see if they are active
-#     :return:
-#     """
-#     r = redis.Redis(host="localhost")
-#     while True:
-#         r.publish("channel_device_common", "device_update_status")
-#         print("Global update done")
-#         time.sleep(15 * 60)
-
-
 def start():
     # multiprocessing.Process(target=pingDevicesThread).start()
-    app.run(host="0.0.0.0", port=8080, gevent=100, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)
 
 
 if __name__ == '__main__':

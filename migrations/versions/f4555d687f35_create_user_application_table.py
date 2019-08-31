@@ -20,7 +20,7 @@ def upgrade():
     op.create_table(
         'UserApplication',
         sa.Column('UserApplicationID', sa.Integer, primary_key=True),
-        sa.Column('UserID', sa.VARCHAR, nullable=False),
+        sa.Column('UserID', sa.Integer, nullable=False),
         sa.Column('ApplicationID', sa.Integer, nullable=False),
         sa.ForeignKeyConstraint(['UserID'], ['User.UserID'], ),
         sa.ForeignKeyConstraint(['ApplicationID'], ['Application.ApplicationID'], ),
