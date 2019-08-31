@@ -33,10 +33,16 @@ data class PushMessage(
 **/
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct PushMessagePayloadEntry {
+    pub key: String,
+    pub value: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Notification {
     pub targetAppID: String,
 //    pub priority: NotificationPrioritory,
 //    pub requiresAcknoqledge: bool,
 //    pub message: PushMessagePayload,
-//    pub dataPayload: Vec<PushMessagePayloadEntry>
+    pub dataPayload: Option<Vec<PushMessagePayloadEntry>>
 }

@@ -1,11 +1,13 @@
 use actix::*;
 use std::time::Duration;
 use actix_web_actors::ws;
-use crate::messages::{ConnectMsg, PushedMsg, DisconnectMsg};
+use crate::messages::{ConnectMsg, PushedMsg, DisconnectMsg, DeviceNotificationMsg};
 use actix_web_actors::ws::Message;
 use actix::prelude::fut;
 use crate::notification_server::NotificationServer;
 use crate::futures::Future;
+use actix_web_actors::ws::Message::Text;
+use crate::client_action::ClientAction;
 
 
 pub struct WSNotificationSession {
@@ -78,6 +80,25 @@ impl Handler<PushedMsg> for WSNotificationSession {
 
 impl StreamHandler<ws::Message, ws::ProtocolError> for WSNotificationSession {
     fn handle(&mut self, item: Message, ctx: &mut Self::Context) {
-        println!("Got handle for stream handler")
+
+        if let Text(msg) = item {
+            println!("Got text message from client '{}': {}", self.token, &msg);
+
+            let client_message = serde_json::from_str::<ClientAction>(msg.as_str());
+
+            if let Ok(action) = client_message {
+                if action.action_name == "BROADCAST_DEVICE" {
+                    let target = action.target.expect("No target given");
+
+                    println!("Sending boadcast to '{}'", target);
+                    self.server_address.do_send(DeviceNotificationMsg {
+                        device_token: target,
+                        message: serde_json::to_string(&action.notification_payload.expect("No notification payload given")).unwrap()
+                    })
+                }
+            }
+        } else {
+            println!("Got unknown message from client '{}'", self.token);
+        }
     }
 }

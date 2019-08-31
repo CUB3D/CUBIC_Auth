@@ -29,6 +29,9 @@ use notification_session::*;
 mod notification_definition;
 use notification_definition::*;
 
+mod client_action;
+use client_action::*;
+
 #[derive(Deserialize)]
 struct PostRequest {
     destination: String,
