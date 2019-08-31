@@ -146,23 +146,31 @@ def app_user_details(token):
         "Token": token
     })
 
+
 @app.route("/app/<token>/auth")
 def appLogin(token):
     application = Application.query.filter(Application.ApplicationToken == token).first()
+    user = getCurrentUserDetails()
 
     # If the id is invalid then redirect to login page
     if application is None:
         return redirect(url_for("login"))
 
-    # Show a login accept page
+    # Has the user already authed the service
+    userApp = UserApplication.query.filter((UserApplication.UserID == user["UserID"]) & (UserApplication.ApplicationID == application.ApplicationID)).first()
 
-    return render_template("application_auth.html",
-                           app_name=application.ApplicationName,
-                           app_desc=application.Description,
-                           app_token=token
-                           )
-
-    return application.url
+    if userApp is None:
+        print("Redirecting to app auth for " + token)
+        # Show a login accept page
+        return render_template("application_auth.html",
+                               app_name=application.ApplicationName,
+                               app_desc=application.Description,
+                               app_token=token
+                               )
+    else:
+        print("User has already accepted application " + token)
+        # instantly redirect back
+        return redirect("//" + application.url + "/" + userApp.Token)
 
     #if it is not, check if the current user has accepted it before, if not show a accept page
     #if they have then direct back with a token
@@ -232,11 +240,11 @@ def developer():
 def newApplication():
     applicationName = request.form["appName"]
     applicationDesc = request.form["appDesc"]
+    applicationUrl = request.form["redirect-url"]
     token = gen_unique_token()
     userInfo = getCurrentUserDetails()
-    url = "cub3d.pw"
 
-    Application(token, userInfo["UserID"], applicationDesc, applicationName, url).create()
+    Application(token, userInfo["UserID"], applicationDesc, applicationName, applicationUrl).create()
 
     return render_template("application_create.html", appID=token)
 

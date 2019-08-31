@@ -13,10 +13,11 @@ COPY ./migrations/ ./migrations/
 
 COPY ./.env ./
 
-RUN cd /home/code && alembic upgrade head
+#RUN cd /home/code && alembic upgrade head
 
 #COPY ./resource/ ./resource/
 #COPY ./src/ ./src/
 #COPY ./templates/ ./templates/
 
-CMD python -m src
+#CMD python -m src
+CMD gunicorn -b 0.0.0.0:8080 src.core.server:app
