@@ -3,18 +3,16 @@
   <script src="http://localhost:8081/resource/javascript/ukauth.js"></script>
 </head>
 <body>
-<button id="login">Login</button>
+<button id="CUBIC_LOGIN">Login</button>
 <script>
-  document.getElementById("login").onclick = function() {
-      let appDescription = {
-        APP_ID: "9kAw0wuU0JCPgAXGSSD942F2OkmHNMUQ",
-        callback: function(user) {
-            console.log("User logged in: " + user.username)
-        }
-      };
+    let appDescription = {
+      APP_ID: "9kAw0wuU0JCPgAXGSSD942F2OkmHNMUQ",
+      callback: function(user) {
+          console.log("User logged in: " + user.username)
+      }
+    };
 
-      ukauth.oneClickLogin(appDescription);
-  }
+    ukauth.init(appDescription);
 </script>
 </body>
 </html>
