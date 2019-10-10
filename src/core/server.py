@@ -96,6 +96,10 @@ def getCurrentUserDetails():
 
     session = Session.query.filter(Session.SessionToken == token).first()
 
+    # check that the user is logged in
+    if session is None:
+        return None
+
 
     #TODO: Maybe just return user obj
     user = User.query.filter(User.UserID == session.UserID).first()
@@ -151,9 +155,13 @@ def app_user_details(token):
 def appLogin(token):
     application = Application.query.filter(Application.ApplicationToken == token).first()
     user = getCurrentUserDetails()
+    if user is None:
+        print("Invalid user, requesting login")
+        return redirect(url_for("login"))
 
     # If the id is invalid then redirect to login page
     if application is None:
+        print("Invalid application, requesting login")
         return redirect(url_for("login"))
 
     # Has the user already authed the service
@@ -240,7 +248,7 @@ def developer():
 def newApplication():
     applicationName = request.form["appName"]
     applicationDesc = request.form["appDesc"]
-    applicationUrl = request.form["redirect-url"]
+    applicationUrl = request.form["redirectUrl"]
     token = gen_unique_token()
     userInfo = getCurrentUserDetails()
 
