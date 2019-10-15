@@ -7,6 +7,7 @@ use serde::Deserialize;
 use futures::future::{Future, ok};
 use std::net::SocketAddr;
 use futures::stream::Stream;
+use serde_json;
 
 extern crate futures;
 #[macro_use]
@@ -25,6 +26,12 @@ use notification_server::*;
 mod notification_session;
 use notification_session::*;
 
+mod notification_definition;
+use notification_definition::*;
+
+mod client_action;
+use client_action::*;
+
 #[derive(Deserialize)]
 struct PostRequest {
     destination: String,
@@ -42,7 +49,7 @@ struct PollExtractor {
 }
 
 fn root_handler() -> Result<HttpResponse, AWError> {
-    Ok(HttpResponse::Ok().body("Hello, World!"))
+    Ok(HttpResponse::Ok().body("Success"))
 }
 
 fn socket_poll(
@@ -65,11 +72,16 @@ fn socket_poll(
     )
 }
 
+fn root_handle() -> Result<HttpResponse, AWError> {
+    Ok(HttpResponse::Ok().body("<h1>404 Not Found</h1>"))
+}
+
 fn message_post(
     path: web::Path<PostRequest>,
     srv: web::Data<Addr<NotificationServer>>
 ) -> impl Future<Item = HttpResponse, Error = AWError> {
-    srv.send(NotificationMsg {
+
+    srv.send(ChannelNotificationMsg {
         channel: path.destination.clone(),
         message: path.data.clone()
     }).wait().unwrap();
@@ -81,7 +93,8 @@ fn post_channel_handle(
     path: web::Path<PostRequest>,
     srv: web::Data<Addr<NotificationServer>>
 ) -> impl Future<Item = HttpResponse, Error = AWError> {
-    srv.send(NotificationMsg {
+
+    srv.send(ChannelNotificationMsg {
         channel: path.destination.clone(),
         message: path.data.clone()
     }).wait().unwrap();
@@ -90,13 +103,21 @@ fn post_channel_handle(
 }
 
 fn post_device_handle(
-    path: web::Path<PostRequest>,
+    path: web::Path<TokenExtractor>,
+    notification_body: web::Json<Notification>,
     srv: web::Data<Addr<NotificationServer>>
 ) -> impl Future<Item = HttpResponse, Error = AWError> {
-    srv.send(NotificationMsg {
-        channel: path.destination.clone(),
-        message: path.data.clone()
-    }).wait().unwrap();
+
+    let msg = serde_json::to_string(&notification_body.0);
+
+    if let Ok(msg) = msg {
+        srv.send(DeviceNotificationMsg {
+            device_token: path.token.clone(),
+            message: msg
+        }).wait().unwrap();
+    } else {
+        println!("Unable to handle message {:?}", msg);
+    }
 
     ok(HttpResponse::Ok().body("Ok"))
 }
@@ -148,10 +169,10 @@ fn main() -> std::io::Result<()> {
             .service(web::resource("/post/{destination}/{data}").route(
                 web::post().to_async(message_post)
             ))
-            .service(web::resource("/post/channel/{channel}").route(
+            .service(web::resource("/channel/{channel}/post").route(
                 web::post().to_async(post_channel_handle)
             ))
-            .service(web::resource("/post/device/{token}").route(
+            .service(web::resource("/device/{token}/post").route(
                 web::post().to_async(post_device_handle)
             ))
     })

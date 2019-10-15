@@ -9,6 +9,7 @@ import base64
 import multiprocessing
 import json
 from authlib.jose import jwt
+import requests
 #from src.modules.idcarddetect import detect_flask
 import src.database
 from src.database import db
@@ -97,6 +98,10 @@ def getCurrentUserDetails():
 
     session = Session.query.filter(Session.SessionToken == token).first()
 
+    # check that the user is logged in
+    if session is None:
+        return None
+
 
     #TODO: Maybe just return user obj
     user = User.query.filter(User.UserID == session.UserID).first()
@@ -125,6 +130,7 @@ def requireLogin(view):
 
     return wrapper
 
+
 @app.route("/app/user/<token>")
 def app_user_details(token):
     """
@@ -148,13 +154,17 @@ def app_user_details(token):
     })
 
 
-@app.route("/app/<token>/auth")
-def appLogin(token):
+@app.route("/app/<token>/<callbackId>/auth")
+def appLogin(token, callbackId):
     application = Application.query.filter(Application.ApplicationToken == token).first()
     user = getCurrentUserDetails()
+    if user is None:
+        print("Invalid user, requesting login")
+        return redirect(url_for("login"))
 
     # If the id is invalid then redirect to login page
     if application is None:
+        print("Invalid application, requesting login")
         return redirect(url_for("login"))
 
     # Has the user already authed the service
@@ -170,8 +180,32 @@ def appLogin(token):
                                )
     else:
         print("User has already accepted application " + token)
+        # If the user has already accepted the application then send them the token as a notification
+
+        header = {'alg': 'RS256'}
+        payload = {'iss': 'Authlib', 'sub': '123'}
+        with open("private.pem") as f:
+            key = f.read()
+        s = jwt.encode(header, payload, key)
+
+        requests.post("https://cbns.cub3d.pw/device/" + callbackId + "/post", json = {
+            "targetAppID": "pw.cub3d.uk",
+            "dataPayload": [
+                {
+                    "key": "user_app_id",
+                    "value": userApp.Token
+                },
+                {
+                    "key": "JWT",
+                    "value": s.decode("utf-8")
+                }
+            ]
+        })
+
+        return render_template("app_auth.html")
+
         # instantly redirect back
-        return redirect("//" + application.url + "/" + userApp.Token)
+        # return redirect("//" + application.url + "/" + userApp.Token)
 
     #if it is not, check if the current user has accepted it before, if not show a accept page
     #if they have then direct back with a token
@@ -204,14 +238,6 @@ def app_accept(token):
 
     user_app_token = gen_unique_token()
     UserApplication(user["UserID"], application.ApplicationID, user_app_token).create()
-
-    header = {'alg': 'RS256'}
-    payload = {'iss': 'Authlib', 'sub': '123'}
-    with open("private.pem") as f:
-        key = f.read()
-    s = jwt.encode(header, payload, key)
-    print("JWT: " + s)
-    print("LEN: " + str(len(s)))
 
     # If the id is invalid then redirect to login page
     if application is None or user is None:
@@ -249,7 +275,7 @@ def developer():
 def newApplication():
     applicationName = request.form["appName"]
     applicationDesc = request.form["appDesc"]
-    applicationUrl = request.form["redirect-url"]
+    applicationUrl = request.form["redirectUrl"]
     token = gen_unique_token()
     userInfo = getCurrentUserDetails()
 

@@ -13,8 +13,14 @@ pub struct DisconnectMsg {
 }
 
 #[derive(actix::Message)]
-pub struct NotificationMsg {
+pub struct ChannelNotificationMsg {
     pub channel: String,
+    pub message: String
+}
+
+#[derive(actix::Message)]
+pub struct DeviceNotificationMsg {
+    pub device_token: String,
     pub message: String
 }
 
