@@ -183,7 +183,11 @@ def appLogin(token, callbackId):
         # If the user has already accepted the application then send them the token as a notification
 
         header = {'alg': 'RS256'}
-        payload = {'iss': 'Authlib', 'sub': '123'}
+        payload = {
+            'username': user['Username'],
+            'userId': user['UserID']
+        }
+
         with open("private.pem") as f:
             key = f.read()
         s = jwt.encode(header, payload, key)
