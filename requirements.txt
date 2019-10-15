@@ -6,6 +6,7 @@ gevent
 alembic
 sqlalchemy
 mysql
+authlib
 
 opencv-python
 matplotlib

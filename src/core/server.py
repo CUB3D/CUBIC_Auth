@@ -8,6 +8,7 @@ import sqlite3
 import base64
 import multiprocessing
 import json
+from authlib.jose import jwt
 #from src.modules.idcarddetect import detect_flask
 import src.database
 from src.database import db
@@ -203,6 +204,14 @@ def app_accept(token):
 
     user_app_token = gen_unique_token()
     UserApplication(user["UserID"], application.ApplicationID, user_app_token).create()
+
+    header = {'alg': 'RS256'}
+    payload = {'iss': 'Authlib', 'sub': '123'}
+    with open("private.pem") as f:
+        key = f.read()
+    s = jwt.encode(header, payload, key)
+    print("JWT: " + s)
+    print("LEN: " + str(len(s)))
 
     # If the id is invalid then redirect to login page
     if application is None or user is None:
