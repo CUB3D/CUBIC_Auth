@@ -156,6 +156,7 @@ fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(server.clone())
+            .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .service(web::resource("/").to(root_handler))
             .service(web::resource("/poll/{token}").to(socket_poll))
@@ -177,7 +178,6 @@ fn main() -> std::io::Result<()> {
             ))
     })
         .bind("0.0.0.0:8080").unwrap()
-        .workers(20)
         .start();
 
     system.run()

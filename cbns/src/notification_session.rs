@@ -98,7 +98,7 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for WSNotificationSession {
                 }
             }
         } else {
-            println!("Got unknown message from client '{}'", self.token);
+            println!("Got unknown message from client '{}': '{:?}'", self.token, &item);
         }
     }
 }
