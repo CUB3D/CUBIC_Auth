@@ -1,14 +1,13 @@
 use actix::*;
 use std::time::Duration;
 use actix_web_actors::ws;
-use crate::messages::{ConnectMsg, PushedMsg, DisconnectMsg, DeviceNotificationMsg};
+use crate::messages::{ConnectMsg, PushedMsg, DisconnectMsg, DeviceNotificationMsg, DeviceSubscribeMsg, DeviceUnsubscribeMsg};
 use actix_web_actors::ws::Message;
 use actix::prelude::fut;
 use crate::notification_server::NotificationServer;
 use crate::futures::Future;
 use actix_web_actors::ws::Message::Text;
 use crate::client_action::ClientAction;
-
 
 pub struct WSNotificationSession {
     pub server_address: Addr<NotificationServer>,
@@ -87,14 +86,44 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for WSNotificationSession {
             let client_message = serde_json::from_str::<ClientAction>(msg.as_str());
 
             if let Ok(action) = client_message {
-                if action.action_name == "BROADCAST_DEVICE" {
-                    let target = action.target.expect("No target given");
+                match action.action_name.as_str() {
+                    "BROADCAST_DEVICE" => {
+                        let target = action.target.expect("No target given");
 
-                    println!("Sending boadcast to '{}'", target);
-                    self.server_address.do_send(DeviceNotificationMsg {
-                        device_token: target,
-                        message: serde_json::to_string(&action.notification_payload.expect("No notification payload given")).unwrap()
-                    })
+                        println!("Sending broadcast to '{}'", target);
+                        self.server_address.do_send(DeviceNotificationMsg {
+                            device_token: target,
+                            message: serde_json::to_string(&action.notification_payload.expect("No notification payload given")).unwrap()
+                        })
+                    }
+                    "SUBSCRIBE" => {
+                        let target = action.target.expect("No target given");
+
+                        println!("Subscribing client '{}' to channel '{}'", self.token, target);
+
+
+                        self.server_address.do_send(DeviceSubscribeMsg {
+                            device_token: self.token.clone(),
+                            channel: target
+                        })
+                    }
+                    "UNSUBSCRIBE" => {
+                        let target = action.target.expect("No target given");
+
+                        println!("Unsubscribing client '{}' from channel '{}'", self.token, target);
+
+
+                        self.server_address.do_send(DeviceUnsubscribeMsg {
+                            device_token: self.token.clone(),
+                            channel: target
+                        })
+                    }
+
+                    _ => {}
+                }
+
+                if action.action_name == "BROADCAST_DEVICE" {
+
                 }
             }
         } else {

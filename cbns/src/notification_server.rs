@@ -1,6 +1,5 @@
 use actix::{Recipient, Actor, Context, Handler};
-use crate::messages::{PushedMsg, ConnectMsg, ChannelNotificationMsg, DisconnectMsg, DeviceStatusRequestMsg, StatusRequestMsg, DeviceNotificationMsg};
-use std::iter::Map;
+use crate::messages::{PushedMsg, ConnectMsg, ChannelNotificationMsg, DisconnectMsg, DeviceStatusRequestMsg, StatusRequestMsg, DeviceNotificationMsg, DeviceSubscribeMsg, DeviceUnsubscribeMsg};
 use std::collections::HashMap;
 use rand::Rng;
 
@@ -52,6 +51,30 @@ impl Channel {
 pub struct NotificationServer {
     pub channels: HashMap<String, Channel>,
     pub clients: HashMap<String, Client>
+}
+
+impl NotificationServer {
+    fn subscribe_client_to_channel(&mut self, channel_name: &str, client: &Client) {
+        let channel = match self.channels.get_mut(channel_name) {
+            Some(channel) => channel,
+            None => {
+                // If needed then add a new channel
+                self.channels.insert(channel_name.to_string(), Channel::default());
+                self.channels.get_mut(channel_name).unwrap()
+            }
+        };
+
+        channel.clients.push(client.clone());
+    }
+
+    fn unsubscribe_client_from_channel(&mut self, channel_name: &str, client: &Client) {
+        if let Some(channel) = self.channels.get_mut(channel_name) {
+            channel.remove_by_uid(client.uid);
+            if channel.clients.is_empty() {
+                self.channels.remove(channel_name);
+            }
+        }
+    }
 }
 
 impl Actor for NotificationServer {
@@ -183,6 +206,31 @@ impl Handler<DeviceNotificationMsg> for NotificationServer {
             if let Err(status) = status {
                 eprintln!("Unable to send message to client: '{}'", client.identifier);
             }
+        }
+    }
+}
+
+impl Handler<DeviceSubscribeMsg> for NotificationServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: DeviceSubscribeMsg, _: &mut Context<Self>) -> Self::Result {
+        if let Some(client) = self.clients.get(msg.device_token.as_str()) {
+            let client_clone = client.clone();
+
+            self.subscribe_client_to_channel(&msg.channel, &client_clone)
+        }
+    }
+}
+
+impl Handler<DeviceUnsubscribeMsg> for NotificationServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: DeviceUnsubscribeMsg, _: &mut Context<Self>) -> Self::Result {
+        let client = self.clients.get(msg.device_token.as_str());
+
+        if let Some(client) = client {
+            let client_clone = client.clone();
+            self.unsubscribe_client_from_channel(&msg.channel, &client_clone)
         }
     }
 }

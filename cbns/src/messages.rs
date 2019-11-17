@@ -1,4 +1,4 @@
-use actix::{Recipient, Addr};
+use actix::Recipient;
 
 #[derive(actix::Message)]
 #[rtype(usize)]
@@ -22,6 +22,18 @@ pub struct ChannelNotificationMsg {
 pub struct DeviceNotificationMsg {
     pub device_token: String,
     pub message: String
+}
+
+#[derive(actix::Message)]
+pub struct DeviceSubscribeMsg {
+    pub device_token: String,
+    pub channel: String
+}
+
+#[derive(actix::Message)]
+pub struct DeviceUnsubscribeMsg {
+    pub device_token: String,
+    pub channel: String
 }
 
 #[derive(actix::Message)]
