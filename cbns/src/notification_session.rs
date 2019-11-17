@@ -26,9 +26,9 @@ impl Actor for WSNotificationSession {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         // Start the device notifier
-        ctx.run_interval(DEVICE_STATUS_UPDATE_INTERVAL, |act, ctx | {
-            ctx.text("device_update_status");
-        });
+//        ctx.run_interval(DEVICE_STATUS_UPDATE_INTERVAL, |act, ctx | {
+//            ctx.text("device_update_status");
+//        });
 
         ctx.run_interval(DEVICE_PING_INTERVAL, | act, ctx | {
             debug!("Sending ping");
