@@ -20,4 +20,4 @@ COPY ./.env ./
 #COPY ./templates/ ./templates/
 
 #CMD python -m src
-CMD gunicorn -b 0.0.0.0:8080 src.core.server:app
+CMD gunicorn -b 0.0.0.0:8080 --reload --log-level debug --error-logfile - src.core.server:app
