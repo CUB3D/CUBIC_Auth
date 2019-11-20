@@ -31,6 +31,10 @@ use endpoint::root::root_handler;
 use endpoint::post_device::post_device_handle;
 use endpoint::post_channel::post_channel_handle;
 
+#[macro_use]
+extern crate dotenv_codegen;
+use dotenv::dotenv;
+
 #[derive(Deserialize)]
 struct PostRequest {
     destination: String,
@@ -80,6 +84,7 @@ fn status_handle(
 }
 
 fn main() -> std::io::Result<()> {
+    dotenv().ok();
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
@@ -111,7 +116,7 @@ fn main() -> std::io::Result<()> {
                 web::post().to_async(post_device_handle)
             ))
     })
-        .bind("0.0.0.0:8080").unwrap()
+        .bind(dotenv!("HOST")).unwrap()
         .start();
 
     system.run()

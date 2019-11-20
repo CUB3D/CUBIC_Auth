@@ -206,6 +206,8 @@ impl Handler<DeviceNotificationMsg> for NotificationServer {
             if let Err(status) = status {
                 eprintln!("Unable to send message to client: '{}'", client.identifier);
             }
+        } else {
+            println!("Unable to find client for device target: {}", &msg.device_token)
         }
     }
 }

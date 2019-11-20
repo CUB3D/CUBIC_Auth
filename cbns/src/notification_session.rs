@@ -121,10 +121,6 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for WSNotificationSession {
 
                     _ => {}
                 }
-
-                if action.action_name == "BROADCAST_DEVICE" {
-
-                }
             }
         } else {
             println!("Got unknown message from client '{}': '{:?}'", self.token, &item);

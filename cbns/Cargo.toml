@@ -21,6 +21,9 @@ env_logger = "*"
 rand = "*"
 debug-rs = "*"
 
+dotenv = "*"
+dotenv_codegen = "*"
+
 [profile.release]
 codegen-units = 1
 opt-level = 3
