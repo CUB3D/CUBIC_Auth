@@ -10,7 +10,7 @@ class SessionAccess(db.Model):
     AccessTime = db.Column(db.Integer, nullable=False)
     Success = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, sessionID, success, time=int(time.clock())):
+    def __init__(self, sessionID, success, time=int(time.time())):
         self.SessionID = sessionID
         self.AccessTime = time
         self.Success = success

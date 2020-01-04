@@ -32,6 +32,9 @@ ncl = __import__("src.modules.ncl", fromlist=["mod_auth"])
 app.register_blueprint(crashtrak.mod_auth)
 app.register_blueprint(ncl.mod_ncl)
 
+SERVER_BASE_URL = (app.config['SERVER_PROTOCOL'] + "://" + app.config["SERVER_HOST"] + ":" + app.config["SERVER_PORT"] + "/").replace(":80/", "")
+
+print("Server running on", SERVER_BASE_URL)
 
 def gen_unique_token(length=32):
     alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -73,6 +76,14 @@ def script(type, file):
         resp.mimetype = "text/" + type
         return resp
 
+@app.route("/ukauth.js")
+def resource_client_js():
+    with open(os.path.join(os.getcwd(), "resource/ukauth.js"), "r") as f:
+        content = f.read()
+        content = content.replace("{HOST_URL}", SERVER_BASE_URL)
+        resp = make_response(content)
+        resp.mimetype = "text/javascript"
+        return resp
 
 def is_login_valid():
     if "UK_AUTH_TOKEN" in request.cookies:
@@ -192,7 +203,9 @@ def appLogin(token, callbackId):
             key = f.read()
         s = jwt.encode(header, payload, key)
 
-        requests.post("https://cbns.cub3d.pw/device/" + callbackId + "/post", json = {
+        print("Sending reply to", callbackId)
+
+        res = requests.post("https://cbns.cub3d.pw/device/" + callbackId + "/post", json = {
             "targetAppID": "pw.cub3d.uk",
             "dataPayload": [
                 {
@@ -205,6 +218,9 @@ def appLogin(token, callbackId):
                 }
             ]
         })
+
+        print("Response:")
+        print(res)
 
         return render_template("app_auth.html")
 
