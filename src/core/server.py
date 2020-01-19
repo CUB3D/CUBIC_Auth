@@ -24,6 +24,9 @@ from src.models.UserApplication import UserApplication
 app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates/"))
 app.config.from_envvar('APP_CONFIG')
 
+SECURE_COOKIES = os.getenv("SECURE_COOKIES")
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN")
+
 src.database.init(app)
 
 crashtrak = __import__("src.modules.crashtrak", fromlist=["mod_auth"])
@@ -296,6 +299,7 @@ def auth():
     user = User.query.filter(User.Username == u).first()
 
     if user is None:
+        print("Auth request failed")
         resp = redirect("/login")
         resp.set_cookie("UK_LOGIN_FAIL", "1")
         return resp
@@ -314,8 +318,10 @@ def auth():
 
         Session(token, userID).create()
 
+        print("Request succeded")
+
         resp = redirect("/loginSuccess")
-        resp.set_cookie("UK_AUTH_TOKEN", token)
+        resp.set_cookie(key="UK_AUTH_TOKEN", value=token, max_age=60 * 60 * 72, domain=COOKIE_DOMAIN, secure=SECURE_COOKIES, httponly=True)
         resp.set_cookie("UK_USERNAME", username)
     else:
         resp.set_cookie("UK_LOGIN_FAIL", "1")
