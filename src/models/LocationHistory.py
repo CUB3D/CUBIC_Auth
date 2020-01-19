@@ -11,7 +11,7 @@ class LocationHistory(db.Model):
     Longitude = db.Column(db.REAL, nullable=False, default=0.0)
     CreationTime = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, deviceID, lat, long, time=int(time.clock())):
+    def __init__(self, deviceID, lat, long, time=int(time.time())):
         self.DeviceID = deviceID
         self.Latitude = lat
         self.Longitude = long
