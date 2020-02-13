@@ -1,5 +1,4 @@
 use actix_web::{web, HttpResponse};
-use crate::TokenExtractor;
 use crate::messages::DeviceNotificationMsg;
 use crate::notification_definition::Notification;
 use crate::notification_server::NotificationServer;

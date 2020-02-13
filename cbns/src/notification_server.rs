@@ -50,7 +50,9 @@ impl Channel {
 
 pub struct NotificationServer {
     pub channels: HashMap<String, Channel>,
-    pub clients: HashMap<String, Client>
+    pub clients: HashMap<String, Client>,
+    // Stores a list of messages that were sent to an unknown client, will be sent if they connect
+    pub client_message_queue: HashMap<String, Vec<String>> // Client ID => Message content
 }
 
 impl NotificationServer {
@@ -89,7 +91,8 @@ impl Default for NotificationServer {
 
         NotificationServer {
             channels,
-            clients: HashMap::new()
+            clients: HashMap::new(),
+            client_message_queue: HashMap::new()
         }
     }
 }
@@ -117,7 +120,26 @@ impl Handler<ConnectMsg> for NotificationServer {
         }
 
         // Add them to the conected clients as well
-        self.clients.insert(msg.token, client);
+        self.clients.insert(msg.token.clone(), client.clone());
+
+        // See if they have any queued messages
+
+        let queuedMessages = &self.client_message_queue[&msg.token];
+
+        for queued_message in queuedMessages {
+            let status = client.message_recipient.do_send(
+                PushedMsg {
+                    message: queued_message.clone()
+                }
+            );
+
+            if let Err(status) = status {
+                eprintln!("Unable to send queued message to client: '{}', {}, {}", &msg.token, queued_message, status);
+            }
+        }
+
+        // This msg queue isnt needed anymore, free up some memory
+        self.client_message_queue.remove(&msg.token);
 
         uid
     }
@@ -152,7 +174,7 @@ impl Handler<ChannelNotificationMsg> for NotificationServer {
                 );
 
                 if let Err(status) = status {
-                    eprintln!("Unable to send message to client: '{}'", client.identifier);
+                    eprintln!("Unable to send message to client: '{}': {}", client.identifier, status);
                 }
             }
         }
@@ -196,6 +218,7 @@ impl Handler<DeviceNotificationMsg> for NotificationServer {
     type Result = ();
 
     fn handle(&mut self, msg: DeviceNotificationMsg, _: &mut Context<Self>) -> Self::Result {
+        //Is the client connected?
         if let Some(client) = self.clients.get(msg.device_token.as_str()) {
             let status = client.message_recipient.do_send(
                 PushedMsg {
@@ -206,8 +229,17 @@ impl Handler<DeviceNotificationMsg> for NotificationServer {
             if let Err(status) = status {
                 eprintln!("Unable to send message to client: '{}'", client.identifier);
             }
-        } else {
-            println!("Unable to find client for device target: {}", &msg.device_token)
+        } else { // Client isnt currently connected
+            // Should the message be queued for later, assume yes for now and create a new msg queue if we need one
+
+            if !self.client_message_queue.contains_key(&msg.device_token) {
+                self.client_message_queue.insert(msg.device_token.clone(), Vec::new());
+            }
+
+            let this_client_msg_queue = self.client_message_queue.get_mut(&msg.device_token).expect("No message queue found for user, this shouldnt happen");
+            this_client_msg_queue.push(msg.message.clone());
+
+            println!("Message sent to unknown client: {}, queued for reconnect", &msg.device_token)
         }
     }
 }
