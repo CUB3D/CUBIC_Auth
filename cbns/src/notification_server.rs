@@ -123,23 +123,24 @@ impl Handler<ConnectMsg> for NotificationServer {
         self.clients.insert(msg.token.clone(), client.clone());
 
         // See if they have any queued messages
+        if self.client_message_queue.contains_key(&msg.token) {
+            let queuedMessages = &self.client_message_queue[&msg.token];
 
-        let queuedMessages = &self.client_message_queue[&msg.token];
+            for queued_message in queuedMessages {
+                let status = client.message_recipient.do_send(
+                    PushedMsg {
+                        message: queued_message.clone()
+                    }
+                );
 
-        for queued_message in queuedMessages {
-            let status = client.message_recipient.do_send(
-                PushedMsg {
-                    message: queued_message.clone()
+                if let Err(status) = status {
+                    eprintln!("Unable to send queued message to client: '{}', {}, {}", &msg.token, queued_message, status);
                 }
-            );
-
-            if let Err(status) = status {
-                eprintln!("Unable to send queued message to client: '{}', {}, {}", &msg.token, queued_message, status);
             }
-        }
 
-        // This msg queue isnt needed anymore, free up some memory
-        self.client_message_queue.remove(&msg.token);
+            // This msg queue isnt needed anymore, free up some memory
+            self.client_message_queue.remove(&msg.token);
+        }
 
         uid
     }
