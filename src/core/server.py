@@ -261,6 +261,20 @@ def api_web_locate_device(id):
         ]
     })
 
+@app.route("/api/web/stop-locate-device/<id>")
+@requireLogin
+def api_web_stop_locate_device(id):
+    device = Device.query.filter(Device.DeviceID == id).first()
+    res = requests.post("https://cbns.cub3d.pw/device/" + device.DeviceToken + "/post", json = {
+        "targetAppID": "pw.cub3d.uk",
+        "dataPayload": [
+            {
+                "key": "action",
+                "value": "RING_STOP"
+            },
+        ]
+    })
+
 
 @app.route("/app/<token>/accept")
 def app_accept(token):

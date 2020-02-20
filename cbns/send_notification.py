@@ -36,4 +36,8 @@ json_string = quote(json.dumps(json_obj)).strip()
 
 print(json_string)
 
-print(requests.post("https://cbns.cub3d.pw/post/device_common/" + json_string))
+BASE_URL = "https://cbns.cub3d.pw"
+BASE_URL = "http://localhost:8090"
+print(requests.post(BASE_URL + "/post/device_common/" + json_string))
+
+print(requests.post(BASE_URL + "/device/test/post", json=json_obj))

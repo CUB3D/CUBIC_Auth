@@ -16,6 +16,16 @@
             console.log(err);
         });
     }
+
+    function stopLocateDevice(deviceId) {
+        fetch("/api/web/stop-locate-device/" + deviceId).then((data) => {
+            console.log("Got result: ");
+            console.log(data);
+        }).catch((err) => {
+            console.log("Error");
+            console.log(err);
+        });
+    }
   </script>
 </head>
 <body>
@@ -27,7 +37,8 @@
                 <div class="panel-body">
                   <div class="tile tile-title text-bold">Device Type</div>
                   <div class="tile tile-subtitle">{{ device.DeviceType }}</div>
-                  <button onclick="locateDevice({{ device.DeviceID }})">Locate</button>
+                  <button onclick="locateDevice({{ device.DeviceID }})">Start ringing</button>
+                  <button onclick="stopLocateDevice({{ device.DeviceID }})">Stop Ring</button>
                 </div>
         </div>
     {% endfor %}
