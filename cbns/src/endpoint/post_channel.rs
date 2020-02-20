@@ -1,5 +1,4 @@
 use actix_web::{web, HttpResponse};
-use crate::PostRequest;
 use crate::notification_server::NotificationServer;
 use actix::Addr;
 use futures::Future;

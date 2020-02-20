@@ -1,11 +1,8 @@
 use actix::*;
 
-use actix_web_actors::ws;
-use actix_web::{HttpResponse, web, HttpRequest, HttpServer, App, Error as AWError, middleware};
+use actix_web::{HttpResponse, web, HttpServer, App, Error as AWError, middleware};
 use serde::Deserialize;
 use futures::future::{Future, ok};
-use futures::stream::Stream;
-use serde_json;
 
 extern crate futures;
 #[macro_use]
@@ -18,10 +15,8 @@ mod notification_server;
 use notification_server::*;
 
 mod notification_session;
-use notification_session::*;
 
 mod notification_definition;
-use notification_definition::*;
 
 mod client_action;
 
@@ -88,6 +83,9 @@ fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
+    let host = dotenv!("HOST");
+    println!("Server starting on {}", host);
+
     let system = actix::System::new("cbns");
 
     let server = NotificationServer::default().start();
@@ -116,7 +114,7 @@ fn main() -> std::io::Result<()> {
                 web::post().to_async(post_device_handle)
             ))
     })
-        .bind(dotenv!("HOST")).unwrap()
+        .bind(host).unwrap()
         .start();
 
     system.run()
