@@ -247,6 +247,21 @@ def app_reject(token):
     return redirect(application.url)
 
 
+@app.route("/api/web/locate-device/<id>")
+@requireLogin
+def api_web_locate_device(id):
+    device = Device.query.filter(Device.DeviceID == id).first()
+    res = requests.post("https://cbns.cub3d.pw/device/" + device.DeviceToken + "/post", json = {
+        "targetAppID": "pw.cub3d.uk",
+        "dataPayload": [
+            {
+                "key": "action",
+                "value": "RING_START"
+            },
+        ]
+    })
+
+
 @app.route("/app/<token>/accept")
 def app_accept(token):
     """
@@ -282,6 +297,12 @@ def settings():
 def applications():
     return render_template("applications.html")
 
+@app.route("/settings/devices")
+@requireLogin
+def settings_devices():
+    userId = getCurrentUserDetails()["UserID"]
+    devices = Device.query.filter(Device.OwnerID == userId)
+    return render_template("settings_devices.html", devices=devices)
 
 @app.route("/settings/developer")
 @requireLogin
@@ -464,6 +485,7 @@ def newAccount():
         User(username, hash).create()
 
     return redirect("/login")
+
 
 def start():
     # multiprocessing.Process(target=pingDevicesThread).start()

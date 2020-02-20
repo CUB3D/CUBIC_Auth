@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile</title>
+
+    {% include "css_common.html" %}
+
+  <script>
+    function locateDevice(deviceId) {
+        fetch("/api/web/locate-device/" + deviceId).then((data) => {
+            console.log("Got result: ");
+            console.log(data);
+        }).catch((err) => {
+            console.log("Error");
+            console.log(err);
+        });
+    }
+  </script>
+</head>
+<body>
+    {% include "settings_header.html" %}
+
+    <div class="column col-3 col-xs-12">
+    {% for device in devices %}
+        <div class="panel">
+                <div class="panel-body">
+                  <div class="tile tile-title text-bold">Device Type</div>
+                  <div class="tile tile-subtitle">{{ device.DeviceType }}</div>
+                  <button onclick="locateDevice({{ device.DeviceID }})">Locate</button>
+                </div>
+        </div>
+    {% endfor %}
+    </div>
+</body>
+</html>
