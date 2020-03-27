@@ -1,24 +1,22 @@
-from flask import Flask, request, render_template, redirect, make_response, url_for
+import base64
 import functools
-import time
-import bcrypt
+import json
 import os
 import secrets
-import sqlite3
-import base64
-import multiprocessing
-import json
-from authlib.jose import jwt
+
+import bcrypt
 import requests
-#from src.modules.idcarddetect import detect_flask
+from authlib.jose import jwt
+from flask import Flask, request, render_template, redirect, make_response, url_for
+
 import src.database
 from src.database import db
-from src.models.User import User
-from src.models.Session import Session
-from src.models.Device import Device
-from src.models.SessionAccess import SessionAccess
-from src.models.LocationHistory import LocationHistory
 from src.models.Application import Application
+from src.models.Device import Device
+from src.models.LocationHistory import LocationHistory
+from src.models.Session import Session
+from src.models.SessionAccess import SessionAccess
+from src.models.User import User
 from src.models.UserApplication import UserApplication
 
 app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates/"))
@@ -28,12 +26,6 @@ SECURE_COOKIES = os.getenv("SECURE_COOKIES")
 COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN")
 
 src.database.init(app)
-
-crashtrak = __import__("src.modules.crashtrak", fromlist=["mod_auth"])
-ncl = __import__("src.modules.ncl", fromlist=["mod_auth"])
-
-app.register_blueprint(crashtrak.mod_auth)
-app.register_blueprint(ncl.mod_ncl)
 
 SERVER_BASE_URL = (app.config['SERVER_PROTOCOL'] + "://" + app.config["SERVER_HOST"] + ":" + app.config["SERVER_PORT"] + "/").replace(":80/", "")
 
@@ -502,7 +494,6 @@ def newAccount():
 
 
 def start():
-    # multiprocessing.Process(target=pingDevicesThread).start()
     app.run(host="0.0.0.0", port=8080, debug=True)
 
 

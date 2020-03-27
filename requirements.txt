@@ -9,8 +9,8 @@ mysql
 mysqlclient
 authlib
 requests
-
-opencv-python
-matplotlib
-pillow
-pytesseract
+#
+# opencv-python
+# matplotlib
+# pillow
+# pytesseract
