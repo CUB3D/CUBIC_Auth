@@ -26,8 +26,6 @@ use endpoint::root::root_handler;
 use endpoint::post_device::post_device_handle;
 use endpoint::post_channel::post_channel_handle;
 
-#[macro_use]
-extern crate dotenv_codegen;
 use dotenv::dotenv;
 
 #[derive(Deserialize)]
@@ -83,9 +81,6 @@ fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let host = dotenv!("HOST");
-    println!("Server starting on {}", host);
-
     let system = actix::System::new("cbns");
 
     let server = NotificationServer::default().start();
@@ -114,7 +109,7 @@ fn main() -> std::io::Result<()> {
                 web::post().to_async(post_device_handle)
             ))
     })
-        .bind(host).unwrap()
+        .bind("0.0.0.0:8080").unwrap()
         .start();
 
     system.run()

@@ -1,0 +1,7 @@
+version: "3.2"
+services:
+  cbns:
+    build: .
+    container_name: cbns_server
+    ports:
+      - "8088:8080"
