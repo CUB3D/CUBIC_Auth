@@ -12,7 +12,6 @@ import src.database
 from src.database import db
 from src.models.Application import Application
 from src.models.Device import Device
-from src.models.LocationHistory import LocationHistory
 from src.models.Session import Session
 from src.models.SessionAccess import SessionAccess
 from src.models.User import User
@@ -36,6 +35,7 @@ COOKIE_DOMAIN = app.config["COOKIE_DOMAIN"]
 
 
 src.database.init(app)
+
 
 def is_login_valid():
     if "UK_AUTH_TOKEN" in request.cookies:
@@ -210,6 +210,7 @@ def api_web_locate_device(id):
         ]
     })
 
+
 @app.route("/api/web/stop-locate-device/<id>")
 @requireLogin
 def api_web_stop_locate_device(id):
@@ -224,6 +225,11 @@ def api_web_stop_locate_device(id):
         ]
     })
 
+
+@app.route("/api/web/delete-device/")
+@requireLogin
+def api_web_remove_device(id):
+    device = Device.query.filter(Device.DeviceID == id).first()
 
 from src.utils.token_generator import gen_unique_token
 
@@ -404,23 +410,6 @@ def newDevice(name):
     resp = make_response()
     resp.set_cookie("UK_DEVICE_TOKEN", token)
     return resp
-
-
-@app.route("/api/updateDevice/<token>/<bat>/<lat>/<long>")
-def updateDevice(token, bat, lat, long):
-    # Get the device
-    device = Device.query.filter(Device.DeviceToken == token).first()
-
-    if device is not None:
-        # Store the old location for history
-        LocationHistory(device.DeviceID, device.Latitude, device.Longitude).create()
-
-        device.BatteryPercent = bat
-        device.Latitude = lat
-        device.Longitude = long
-        db.session.commit()
-
-    return ""
 
 
 @app.route("/newAccount", methods=["POST", "GET"])

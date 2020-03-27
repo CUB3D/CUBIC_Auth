@@ -26,22 +26,43 @@
             console.log(err);
         });
     }
+
+    function deleteDevice(deviceId) {
+        fetch("/api/web/delete-device/" + deviceId).then((data) => {
+            console.log("Got result: ");
+            console.log(data);
+        }).catch((err) => {
+            console.log("Error");
+            console.log(err);
+        }).finally(() => {
+            window.location.reload();
+        });
+    }
   </script>
 </head>
 <body>
     {% include "settings_header.html" %}
 
-    <div class="column col-3 col-xs-12">
-    {% for device in devices %}
-        <div class="panel">
-                <div class="panel-body">
-                  <div class="tile tile-title text-bold">Device Type</div>
-                  <div class="tile tile-subtitle">{{ device.DeviceType }}</div>
-                  <button onclick="locateDevice({{ device.DeviceID }})">Start ringing</button>
-                  <button onclick="stopLocateDevice({{ device.DeviceID }})">Stop Ring</button>
+    <div class="container">
+      <div class="columns">
+        {% for device in devices %}
+          <div class="column col-4">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title h5">{{ device.DeviceType }}</div>
+              </div>
+              <div class="card-body">
+                <div class="columns">
+                  <button class="col-6 btn" onclick="locateDevice({{ device.DeviceID }})">Start ringing</button>
+                  <button class="col-6 btn" onclick="stopLocateDevice({{ device.DeviceID }})">Stop Ring</button>
+                  <button class="col-3 btn btn-error" onclick="deleteDevice({{ device.DeviceID }})">Delete</button>
                 </div>
-        </div>
-    {% endfor %}
+              </div>
+            </div>
+
+          </div>
+        {% endfor %}
+      </div>
     </div>
 </body>
 </html>
