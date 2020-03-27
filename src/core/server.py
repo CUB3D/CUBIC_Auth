@@ -72,11 +72,13 @@ def getCurrentUserDetails():
     if user is not None:
         username = user.Username
         userID = user.UserID
+        channel = user.communication_channel
 
         return {
             "Username": username,
             "Token": token,
-            "UserID": userID
+            "UserID": userID,
+            "Channel": channel
         }
 
 
@@ -401,7 +403,9 @@ def api_account_exists(username):
 @requireLogin
 def newDevice(name):
     token = gen_unique_token()
-    ownerID = getCurrentUserDetails()["UserID"]
+    user = getCurrentUserDetails()
+    ownerID = user["UserID"]
+    channel = user["Channel"]
 
     print("Adding device", token, name)
 
@@ -409,6 +413,7 @@ def newDevice(name):
 
     resp = make_response()
     resp.set_cookie("UK_DEVICE_TOKEN", token)
+    resp.set_cookie("UK_CHANNEL", channel)
     return resp
 
 
