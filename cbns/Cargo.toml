@@ -9,12 +9,14 @@ actix = "0.8.3"
 actix-web = "1.0.3"
 actix-web-actors = "1.0.1"
 
-json = "0.11.14"
-serde = "1.0.94"
-serde_derive = "1.0.94"
-serde_json = "1.0.40"
-futures = "0.1.28"
-tokio = "0.1.22"
+json = "0.11"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+futures = "0.1"
+
+tokio = { version = "0.2.11", features = ["full"] }
+
 env_logger = "0.7.1"
 rand = "0.7.3"
 debug-rs = "0.1.3"
