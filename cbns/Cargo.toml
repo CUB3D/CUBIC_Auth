@@ -7,23 +7,19 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix = "*"
-actix-web = "*"
-actix-web-actors = "*"
+actix = "0.8.3"
+actix-web = "1.0.3"
+actix-web-actors = "1.0.1"
 
-json = "*"
-serde = "*"
-serde_derive = "*"
-serde_json = "*"
-futures = "*"
-tokio = "*"
+json = "0.11.14"
+serde = "1.0.94"
+serde_derive = "1.0.94"
+serde_json = "1.0.40"
+futures = "0.1.28"
+tokio = "0.1.22"
 env_logger = "*"
 rand = "*"
 debug-rs = "*"
 
 dotenv = "*"
 dotenv_codegen = "*"
-
-[profile.release]
-codegen-units = 1
-opt-level = 3
