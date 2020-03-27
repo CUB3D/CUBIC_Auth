@@ -2,7 +2,6 @@ import base64
 import functools
 import json
 import os
-import secrets
 
 import bcrypt
 import requests
@@ -19,66 +18,24 @@ from src.models.SessionAccess import SessionAccess
 from src.models.User import User
 from src.models.UserApplication import UserApplication
 
-app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates/"))
-app.config.from_envvar('APP_CONFIG')
+from src.endpoint.root import root
+from src.endpoint.clientjs import clientjs
 
-SECURE_COOKIES = os.getenv("SECURE_COOKIES")
-COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN")
+app = Flask(__name__,
+            template_folder=os.path.join(os.getcwd(), "templates/"),
+            static_url_path="/static",
+            static_folder=os.path.join(os.getcwd(), "static")
+            )
+
+app.config.from_envvar('APP_CONFIG', silent=True)
+app.register_blueprint(root)
+app.register_blueprint(clientjs)
+
+SECURE_COOKIES = app.config["SECURE_COOKIES"]
+COOKIE_DOMAIN = app.config["COOKIE_DOMAIN"]
+
 
 src.database.init(app)
-
-SERVER_BASE_URL = (app.config['SERVER_PROTOCOL'] + "://" + app.config["SERVER_HOST"] + ":" + app.config["SERVER_PORT"] + "/").replace(":80/", "")
-
-print("Server running on", SERVER_BASE_URL)
-
-def gen_unique_token(length=32):
-    alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-    return "".join([secrets.choice(alphabet) for _ in range(length)])
-
-
-@app.route("/app/demo_camera/main")
-def app_demo_camera():
-    return render_template("demo_camera.html")
-
-
-# @app.route("/app/demo_camera/submit", methods=["POST", "GET"])
-# def app_demo_camera_submit():
-#     img = request.form["img"]
-#
-#     while len(img) % 4 != 0:
-#         img += "="
-#
-#     img = img.split(",")[-1]
-#
-#     with open("test-dump.txt", "w") as f:
-#         f.write(img)
-#
-#     imgData = base64.urlsafe_b64decode(img)
-#
-#     return json.dumps(detect_flask.doFind(imgData))
-
-
-@app.route("/")
-def default():
-    return redirect("/login")
-
-
-@app.route("/resource/<type>/<file>")
-def script(type, file):
-    with open(os.path.join(os.getcwd(), "resource/", os.path.basename(file)), "r") as f:
-        resp = make_response(f.read())
-        resp.mimetype = "text/" + type
-        return resp
-
-@app.route("/ukauth.js")
-def resource_client_js():
-    with open(os.path.join(os.getcwd(), "resource/ukauth.js"), "r") as f:
-        content = f.read()
-        content = content.replace("{HOST_URL}", SERVER_BASE_URL)
-        resp = make_response(content)
-        resp.mimetype = "text/javascript"
-        return resp
 
 def is_login_valid():
     if "UK_AUTH_TOKEN" in request.cookies:
@@ -266,6 +223,9 @@ def api_web_stop_locate_device(id):
             },
         ]
     })
+
+
+from src.utils.token_generator import gen_unique_token
 
 
 @app.route("/app/<token>/accept")
