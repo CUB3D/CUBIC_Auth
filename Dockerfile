@@ -10,7 +10,8 @@ RUN pip install -r requirements.txt
 COPY ./alembic.ini ./
 COPY ./migrations/ ./migrations/
 
-RUN cd /home/code && alembic upgrade head
+# currently cannot be run from docker as the database uri has to be set manually
+#RUN cd /home/code && alembic upgrade head
 
 COPY ./static ./static/
 COPY ./src/ ./src/
