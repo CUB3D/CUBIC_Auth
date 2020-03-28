@@ -1,2 +1,9 @@
+import os
+
+
+def get_config(app, key, default=None):
+    return os.environ[key] or app.config[key] or default
+
+
 def get_app_base_url(app):
-    return f"{app.config['SERVER_PROTOCOL']}://{app.config['SERVER_HOST']}:{app.config['SERVER_PORT']}/".rstrip(":80/")
+    return f"{get_config(app, 'SERVER_PROTOCOL')}://{get_config(app, 'SERVER_HOST')}:{get_config(app, 'SERVER_PORT')}/".rstrip(":80/")

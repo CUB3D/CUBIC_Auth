@@ -17,6 +17,8 @@ from src.models.SessionAccess import SessionAccess
 from src.models.User import User
 from src.models.UserApplication import UserApplication
 
+from src.core.config import get_config
+
 from src.endpoint.root import root
 from src.endpoint.clientjs import clientjs
 
@@ -30,8 +32,8 @@ app.config.from_envvar('APP_CONFIG', silent=True)
 app.register_blueprint(root)
 app.register_blueprint(clientjs)
 
-SECURE_COOKIES = os.environ["SECURE_COOKIES"] or app.config["SECURE_COOKIES"]
-COOKIE_DOMAIN = os.environ["COOKIE_DOMAIN"] or app.config["COOKIE_DOMAIN"]
+SECURE_COOKIES = get_config(app, "SECURE_COOKIES")
+COOKIE_DOMAIN = get_config(app, "COOKIE_DOMAIN")
 
 
 src.database.init(app)
