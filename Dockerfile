@@ -17,4 +17,4 @@ COPY ./static ./static/
 COPY ./src/ ./src/
 COPY ./templates/ ./templates/
 
-CMD gunicorn -w 4 -b 0.0.0.0:8085 src.core.server:app
+CMD gunicorn -w 4 -b 0.0.0.0:8080 src.core.server:app
