@@ -30,8 +30,8 @@ app.config.from_envvar('APP_CONFIG', silent=True)
 app.register_blueprint(root)
 app.register_blueprint(clientjs)
 
-SECURE_COOKIES = app.config["SECURE_COOKIES"]
-COOKIE_DOMAIN = app.config["COOKIE_DOMAIN"]
+SECURE_COOKIES = os.environ["SECURE_COOKIES"] or app.config["SECURE_COOKIES"]
+COOKIE_DOMAIN = os.environ["COOKIE_DOMAIN"] or app.config["COOKIE_DOMAIN"]
 
 
 src.database.init(app)
