@@ -35,6 +35,9 @@ app.register_blueprint(clientjs)
 SECURE_COOKIES = get_config(app, "SECURE_COOKIES")
 COOKIE_DOMAIN = get_config(app, "COOKIE_DOMAIN")
 
+# Needed to make sqlalchemy work an indended
+app.config['SQLALCHEMY_DATABASE_URI'] = get_config(app, "SQLALCHEMY_DATABASE_URI")
+
 
 src.database.init(app)
 

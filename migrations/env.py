@@ -71,6 +71,7 @@ def run_migrations_online():
         with context.begin_transaction():
             context.run_migrations()
 
+
 def get_url():
     return os.getenv("SQLALCHEMY_DATABASE_URI")
 
