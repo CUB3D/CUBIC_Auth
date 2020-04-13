@@ -158,7 +158,7 @@ def appLogin(token, callbackId):
             'userId': user['UserID']
         }
 
-        with open("private.pem") as f:
+        with open("keys/private.pem") as f:
             key = f.read()
         s = jwt.encode(header, payload, key)
 
